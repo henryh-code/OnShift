@@ -491,6 +491,21 @@
     flex-shrink: 0;
   }
 
+  .zorgned-badge{
+    font-size: 11px;
+    color: var(--accent-text);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    padding: 1px 7px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: filter .15s ease;
+  }
+
+  .zorgned-badge:hover{ filter: brightness(1.15); text-decoration: underline; }
+
   .resident-nav{ display: flex; gap: 4px; flex-shrink: 0; }
 
   .resident-nav-btn{
@@ -1104,6 +1119,7 @@
       <div class="add-row">
         <input type="text" id="newResidentInput" placeholder="Naam nieuwe bewoner...">
         <input type="text" id="newResidentRoom" placeholder="Kamer (optioneel)" style="max-width:120px;">
+        <input type="text" id="newResidentClientnr" placeholder="Cliëntnr. (optioneel)" style="max-width:150px;">
         <button id="addResidentBtn" type="button">Toevoegen</button>
       </div>
     </section>
@@ -1283,7 +1299,8 @@
       name: typeof r.name === "string" ? r.name : ("Bewoner " + (i + 1)),
       room: typeof r.room === "string" ? r.room : "",
       status: status,
-      note: typeof r.note === "string" ? r.note : ""
+      note: typeof r.note === "string" ? r.note : "",
+      clientnr: typeof r.clientnr === "string" ? r.clientnr : ""
     };
   }
 
@@ -1751,6 +1768,17 @@
       nameWrap.appendChild(roomBadge);
     }
 
+    if(resident.clientnr){
+      var zorgnedLink = document.createElement("a");
+      zorgnedLink.className = "zorgned-badge";
+      zorgnedLink.href = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(resident.clientnr) + "&section=1";
+      zorgnedLink.target = "_blank";
+      zorgnedLink.rel = "noopener noreferrer";
+      zorgnedLink.textContent = "ZorgNed ↗";
+      zorgnedLink.setAttribute("aria-label", "Open cliëntdossier in ZorgNed");
+      nameWrap.appendChild(zorgnedLink);
+    }
+
     head.appendChild(nameWrap);
 
     var nav = document.createElement("div");
@@ -1849,6 +1877,7 @@
   var residentManageList = document.getElementById("residentManageList");
   var newResidentInput = document.getElementById("newResidentInput");
   var newResidentRoom = document.getElementById("newResidentRoom");
+  var newResidentClientnr = document.getElementById("newResidentClientnr");
   var addResidentBtn = document.getElementById("addResidentBtn");
 
   function renderResidentManage(){
@@ -1903,8 +1932,25 @@
         }, 350);
       });
 
+      var clientnrInput = document.createElement("input");
+      clientnrInput.type = "text";
+      clientnrInput.className = "f-side";
+      clientnrInput.placeholder = "Cliëntnr.";
+      clientnrInput.value = resident.clientnr || "";
+      clientnrInput.setAttribute("aria-label", "Cliëntnummer (ZorgNed)");
+      var clientnrDebounce = null;
+      clientnrInput.addEventListener("input", function(){
+        resident.clientnr = clientnrInput.value;
+        if(clientnrDebounce) clearTimeout(clientnrDebounce);
+        clientnrDebounce = setTimeout(function(){
+          saveState();
+          if(state.dashboardSelectedResidentId === resident.id) renderResidentDetail();
+        }, 350);
+      });
+
       editWrap.appendChild(nameInput);
       editWrap.appendChild(roomInput);
+      editWrap.appendChild(clientnrInput);
       li.appendChild(editWrap);
 
       var removeBtn = document.createElement("button");
@@ -1936,10 +1982,12 @@
       name: val,
       room: newResidentRoom.value.trim(),
       status: "unseen",
-      note: ""
+      note: "",
+      clientnr: newResidentClientnr.value.trim()
     });
     newResidentInput.value = "";
     newResidentRoom.value = "";
+    newResidentClientnr.value = "";
     saveState();
     renderResidentManage();
     renderResidentSummary();
@@ -1948,7 +1996,7 @@
   }
 
   addResidentBtn.addEventListener("click", addResident);
-  [newResidentInput, newResidentRoom].forEach(function(el){
+  [newResidentInput, newResidentRoom, newResidentClientnr].forEach(function(el){
     el.addEventListener("keydown", function(e){
       if(e.key === "Enter"){ e.preventDefault(); addResident(); }
     });
