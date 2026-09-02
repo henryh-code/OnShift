@@ -61,6 +61,7 @@
     contacten: true,
     stadsteam: true,
     beheerBewoners: true,
+    beheerContacten: true,
     beheerStadsteam: false,
     beheerData: false
   };
@@ -383,6 +384,7 @@
   var residentSummary = document.getElementById("residentSummary");
   var residentSearch = document.getElementById("residentSearch");
   var residentSearchWrap = document.getElementById("residentSearchWrap");
+  var clearResidentSearchBtn = document.getElementById("clearResidentSearch");
   var residentDropdown = document.getElementById("residentDropdown");
   var residentDetailWrap = document.getElementById("residentDetailWrap");
   var sortDropdownWrap = document.getElementById("sortDropdownWrap");
@@ -467,8 +469,15 @@
   function openDropdown(){ renderResidentDropdown(); residentDropdown.classList.add("open"); }
   function closeDropdown(){ residentDropdown.classList.remove("open"); }
 
+  function updateClearButtonVisibility(){
+    clearResidentSearchBtn.classList.toggle("visible", residentSearch.value.length > 0);
+  }
+
   residentSearch.addEventListener("focus", openDropdown);
-  residentSearch.addEventListener("input", openDropdown);
+  residentSearch.addEventListener("input", function(){
+    openDropdown();
+    updateClearButtonVisibility();
+  });
   residentSearch.addEventListener("keydown", function(e){
     if(e.key === "Enter"){
       e.preventDefault();
@@ -479,6 +488,13 @@
     }
   });
 
+  clearResidentSearchBtn.addEventListener("click", function(){
+    residentSearch.value = "";
+    updateClearButtonVisibility();
+    openDropdown();
+    residentSearch.focus();
+  });
+
   document.addEventListener("click", function(e){
     if(!residentSearchWrap.contains(e.target)) closeDropdown();
   });
@@ -487,6 +503,7 @@
     state.dashboardSelectedResidentId = id;
     var resident = getResidentById(id);
     residentSearch.value = resident ? resident.name : "";
+    updateClearButtonVisibility();
     saveState();
     closeDropdown();
     renderResidentDetail();
@@ -1735,6 +1752,7 @@
     saveState();
     handoverEl.value = "";
     residentSearch.value = "";
+    updateClearButtonVisibility();
     renderTasks();
     renderResidentSummary();
     renderResidentDetail();
@@ -1747,6 +1765,7 @@
   function renderAll(){
     handoverEl.value = state.handoverNote;
     residentSearch.value = "";
+    updateClearButtonVisibility();
     closeDropdown();
     sortDropdownLabel.textContent = state.dashboardSort === "kamer" ? "Kamer" : "Naam";
     sortDropdownOptions.forEach(function(opt){
