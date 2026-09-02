@@ -364,7 +364,7 @@
     width: 100%;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 8px 10px;
+    padding: 8px 32px 8px 10px;
     font-size: 13.5px;
     font-family: inherit;
     outline: none;
@@ -374,6 +374,31 @@
 
   #residentSearch:focus{ border-color: var(--accent); }
   #residentSearch::placeholder{ color: var(--text-faint); }
+
+  .search-clear-btn{
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: var(--text-faint);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    z-index: 5;
+    transition: color .12s ease, background .12s ease;
+  }
+
+  .search-clear-btn.visible{ display: flex; }
+  .search-clear-btn:hover{ color: var(--text); background: var(--card); }
 
   .resident-dropdown{
     position: absolute;
