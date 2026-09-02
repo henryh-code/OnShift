@@ -33,6 +33,8 @@
   <div class="tabs">
     <button class="tab-btn active" id="tabBtnDashboard" type="button" data-tab="dashboard">Dashboard</button>
     <button class="tab-btn" id="tabBtnAgenda" type="button" data-tab="agenda">Agenda</button>
+    <button class="tab-btn" id="tabBtnBewoners" type="button" data-tab="bewoners">Bewoners</button>
+    <button class="tab-btn" id="tabBtnContacten" type="button" data-tab="contacten">Contacten</button>
     <button class="tab-btn" id="tabBtnBeheer" type="button" data-tab="beheer">Instellingen / Beheer</button>
   </div>
 
@@ -197,7 +199,6 @@
             <div class="cal-month-label" id="calMonthLabel"></div>
             <button class="cal-nav-btn" id="calNextBtn" type="button" aria-label="Volgende maand">›</button>
           </div>
-          <button class="cal-today-btn" id="calTodayBtn" type="button">Vandaag</button>
         </div>
         <div class="cal-weekdays">
           <span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span>
@@ -242,6 +243,48 @@
     </section>
 
     <footer class="hint">Klik op een dag in de maandweergave om direct naar de dagweergave te gaan.</footer>
+  </div>
+
+  <!-- ===================== BEWONERS ===================== -->
+  <div class="tab-panel" id="panelBewoners">
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="dot"></span>Bewoners</div>
+      </div>
+      <div class="filter-pills" id="residentStatusFilters">
+        <button type="button" class="filter-pill active" data-status="alle">Alle</button>
+        <button type="button" class="filter-pill" data-status="unseen">Nog niet gezien</button>
+        <button type="button" class="filter-pill" data-status="seen">Gezien</button>
+        <button type="button" class="filter-pill" data-status="absent">Afwezig</button>
+      </div>
+      <ul class="resident-full-list" id="residentsFullList"></ul>
+    </section>
+
+    <footer class="hint">Tik op de statusstip om te wisselen, of op een bewoner om die op het Dashboard te openen.</footer>
+  </div>
+
+  <!-- ===================== CONTACTEN ===================== -->
+  <div class="tab-panel" id="panelContacten">
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="dot"></span>Stadsteam Backup</div>
+      </div>
+      <input type="text" id="stadsteamSearchTab" class="af-title" placeholder="Zoek collega, team of e-mail..." autocomplete="off" style="margin-bottom:9px;">
+      <div class="filter-pills" id="stadsteamFiltersTab">
+        <button type="button" class="filter-pill active" data-team="alle">Alle</button>
+        <button type="button" class="filter-pill" data-team="volwassenen">Volwassenen</button>
+        <button type="button" class="filter-pill" data-team="jongvolwassenen">Jongvolwassenen</button>
+        <button type="button" class="filter-pill" data-team="veldwerkers">Veldwerkers</button>
+      </div>
+      <ul class="stadsteam-list" id="stadsteamListTab"></ul>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="dot"></span>Noodcontacten &amp; nummers</div>
+      </div>
+      <ul class="contact-list" id="contactListTab"></ul>
+    </section>
   </div>
 
   <!-- ===================== BEHEER ===================== -->
