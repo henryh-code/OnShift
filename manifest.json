@@ -1,6 +1,6 @@
 {
-  "name": "ShiftBase",
-  "short_name": "Shift",
+  "name": "OnShift",
+  "short_name": "OnShift",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
