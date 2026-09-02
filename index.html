@@ -81,6 +81,7 @@
         <div class="resident-controls">
           <div class="resident-search-wrap" id="residentSearchWrap">
             <input type="text" id="residentSearch" placeholder="Zoek bewoner op naam..." autocomplete="off">
+            <button type="button" id="clearResidentSearch" class="search-clear-btn" aria-label="Zoekopdracht wissen">✕</button>
             <div class="resident-dropdown" id="residentDropdown"></div>
           </div>
           <div class="sort-dropdown-wrap" id="sortDropdownWrap">
@@ -266,15 +267,18 @@
 
     <!-- Contacten beheren -->
     <section class="card">
-      <div class="card-head">
+      <div class="card-head" data-panel="beheerContacten" role="button" tabindex="0" aria-expanded="true">
         <div class="card-title"><span class="dot"></span>Noodcontacten beheren</div>
+        <span class="card-chevron">▾</span>
       </div>
-      <div class="card-sub">Namen en nummers zijn direct te bewerken.</div>
-      <ul class="manage-list" id="contactManageList"></ul>
-      <div class="add-row">
-        <input type="text" id="newContactName" placeholder="Naam, bijv. Huisartsenpost">
-        <input type="tel" id="newContactNumber" placeholder="Telefoonnummer">
-        <button id="addContactBtn" type="button">Toevoegen</button>
+      <div class="card-body" id="panelBody-beheerContacten">
+        <div class="card-sub">Namen en nummers zijn direct te bewerken.</div>
+        <ul class="manage-list" id="contactManageList"></ul>
+        <div class="add-row">
+          <input type="text" id="newContactName" placeholder="Naam, bijv. Huisartsenpost">
+          <input type="tel" id="newContactNumber" placeholder="Telefoonnummer">
+          <button id="addContactBtn" type="button">Toevoegen</button>
+        </div>
       </div>
     </section>
 
