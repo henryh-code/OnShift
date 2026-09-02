@@ -1,0 +1,19 @@
+{
+  "name": "ShiftBase",
+  "short_name": "Shift",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#17181a",
+  "theme_color": "#17181a",
+  "lang": "nl",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
