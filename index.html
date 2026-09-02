@@ -19,6 +19,17 @@
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
+<div id="splashOverlay" class="splash-overlay">
+  <div class="splash-content">
+    <img src="./icon.png" alt="OnShift Logo" class="splash-logo">
+    <div class="splash-title">OnShift</div>
+  </div>
+</div>
+<script>
+  if (sessionStorage.getItem("onshift_splash_shown")) {
+    document.getElementById("splashOverlay").style.display = "none";
+  }
+</script>
 
 <div class="app">
 
