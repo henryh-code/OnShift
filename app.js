@@ -284,25 +284,34 @@
   }
 
   // ---------- Tabs ----------
-  var tabBtnDashboard = document.getElementById("tabBtnDashboard");
-  var tabBtnAgenda = document.getElementById("tabBtnAgenda");
-  var tabBtnBeheer = document.getElementById("tabBtnBeheer");
-  var panelDashboard = document.getElementById("panelDashboard");
-  var panelAgenda = document.getElementById("panelAgenda");
-  var panelBeheer = document.getElementById("panelBeheer");
+  var tabButtons = document.querySelectorAll(".tab-btn[data-tab]");
+  var TAB_PANEL_IDS = {
+    dashboard: "panelDashboard",
+    agenda: "panelAgenda",
+    bewoners: "panelBewoners",
+    contacten: "panelContacten",
+    beheer: "panelBeheer"
+  };
 
   function activateTab(tab){
-    tabBtnDashboard.classList.toggle("active", tab === "dashboard");
-    tabBtnAgenda.classList.toggle("active", tab === "agenda");
-    tabBtnBeheer.classList.toggle("active", tab === "beheer");
-    panelDashboard.classList.toggle("active", tab === "dashboard");
-    panelAgenda.classList.toggle("active", tab === "agenda");
-    panelBeheer.classList.toggle("active", tab === "beheer");
+    tabButtons.forEach(function(btn){
+      var isActive = btn.getAttribute("data-tab") === tab;
+      btn.classList.toggle("active", isActive);
+      if(isActive && typeof btn.scrollIntoView === "function"){
+        btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    });
+    Object.keys(TAB_PANEL_IDS).forEach(function(key){
+      var panel = document.getElementById(TAB_PANEL_IDS[key]);
+      if(panel) panel.classList.toggle("active", key === tab);
+    });
+    if(tab === "bewoners") renderResidentsFullList();
+    if(tab === "contacten"){ renderStadsteamListTab(); renderContactsTab(); }
   }
 
-  tabBtnDashboard.addEventListener("click", function(){ activateTab("dashboard"); });
-  tabBtnAgenda.addEventListener("click", function(){ activateTab("agenda"); });
-  tabBtnBeheer.addEventListener("click", function(){ activateTab("beheer"); });
+  tabButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){ activateTab(btn.getAttribute("data-tab")); });
+  });
 
   // ---------- Overdracht ----------
   var handoverEl = document.getElementById("handoverNote");
@@ -555,6 +564,7 @@
       renderResidentDetail();
       renderResidentSummary();
       if(residentDropdown.classList.contains("open")) renderResidentDropdown();
+      renderResidentsFullList();
     }
 
     return wrap;
@@ -739,6 +749,7 @@
           if(state.dashboardSelectedResidentId === resident.id) renderResidentDetail();
           if(residentDropdown.classList.contains("open")) renderResidentDropdown();
           refreshResidentSelects();
+          renderResidentsFullList();
         }, 350);
       });
 
@@ -757,6 +768,7 @@
           if(state.dashboardSelectedResidentId === resident.id) renderResidentDetail();
           if(residentDropdown.classList.contains("open")) renderResidentDropdown();
           refreshResidentSelects();
+          renderResidentsFullList();
         }, 350);
       });
 
@@ -795,6 +807,7 @@
         renderResidentDetail();
         refreshResidentSelects();
         if(residentDropdown.classList.contains("open")) renderResidentDropdown();
+        renderResidentsFullList();
       });
       li.appendChild(removeBtn);
 
@@ -821,12 +834,111 @@
     renderResidentSummary();
     refreshResidentSelects();
     if(residentDropdown.classList.contains("open")) renderResidentDropdown();
+    renderResidentsFullList();
   }
 
   addResidentBtn.addEventListener("click", addResident);
   [newResidentInput, newResidentRoom, newResidentClientnr].forEach(function(el){
     el.addEventListener("keydown", function(e){
       if(e.key === "Enter"){ e.preventDefault(); addResident(); }
+    });
+  });
+
+  // ======================================================
+  // ---------- Bewoners: volledige lijst (tabblad) --------
+  // ======================================================
+  var residentsFullList = document.getElementById("residentsFullList");
+  var residentStatusFiltersEl = document.getElementById("residentStatusFilters");
+  var residentStatusFilterBtns = residentStatusFiltersEl.querySelectorAll(".filter-pill");
+  var residentStatusFilter = "alle";
+
+  function filteredResidentsForFullList(){
+    var list = sortedResidents();
+    if(residentStatusFilter === "alle") return list;
+    return list.filter(function(r){ return r.status === residentStatusFilter; });
+  }
+
+  function renderResidentsFullList(){
+    var list = filteredResidentsForFullList();
+    residentsFullList.innerHTML = "";
+
+    if(list.length === 0){
+      var empty = document.createElement("li");
+      empty.className = "empty-note";
+      empty.textContent = "Geen bewoners gevonden.";
+      residentsFullList.appendChild(empty);
+      return;
+    }
+
+    list.forEach(function(resident){
+      var li = document.createElement("li");
+      li.className = "resident-full-row";
+      li.setAttribute("tabindex", "0");
+      li.setAttribute("role", "button");
+      li.setAttribute("aria-label", "Open " + resident.name + " op het Dashboard");
+
+      li.appendChild(buildStatusIndicator(resident));
+
+      var main = document.createElement("div");
+      main.className = "resident-full-main";
+
+      var top = document.createElement("div");
+      top.className = "resident-full-top";
+
+      var nameEl = document.createElement("span");
+      nameEl.className = "resident-full-name";
+      nameEl.textContent = resident.name;
+      top.appendChild(nameEl);
+
+      if(resident.room){
+        var roomEl = document.createElement("span");
+        roomEl.className = "resident-full-room";
+        roomEl.textContent = "Kamer " + resident.room;
+        top.appendChild(roomEl);
+      }
+
+      main.appendChild(top);
+
+      if(resident.note){
+        var noteEl = document.createElement("div");
+        noteEl.className = "resident-full-note";
+        noteEl.textContent = resident.note;
+        main.appendChild(noteEl);
+      }
+
+      li.appendChild(main);
+
+      var arrow = document.createElement("span");
+      arrow.className = "resident-full-arrow";
+      arrow.textContent = "›";
+      li.appendChild(arrow);
+
+      function openOnDashboard(){
+        selectResident(resident.id);
+        activateTab("dashboard");
+      }
+
+      li.addEventListener("click", function(e){
+        if(e.target.closest(".status-indicator-wrap")) return;
+        openOnDashboard();
+      });
+      li.addEventListener("keydown", function(e){
+        if(e.target.closest(".status-indicator-wrap")) return;
+        if(e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          openOnDashboard();
+        }
+      });
+
+      residentsFullList.appendChild(li);
+    });
+  }
+
+  residentStatusFilterBtns.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      residentStatusFilter = btn.getAttribute("data-status");
+      residentStatusFilterBtns.forEach(function(b){ b.classList.toggle("active", b === btn); });
+      renderResidentsFullList();
     });
   });
 
@@ -932,16 +1044,17 @@
     });
   }
 
-  // ---------- Contacten (Dashboard, read-only) ----------
+  // ---------- Contacten (Dashboard + tabblad, read-only) ----------
   var contactListDashboard = document.getElementById("contactListDashboard");
+  var contactListTab = document.getElementById("contactListTab");
 
-  function renderContactsDashboard(){
-    contactListDashboard.innerHTML = "";
+  function renderContactsInto(targetEl, clickablePhone){
+    targetEl.innerHTML = "";
     if(state.contacts.length === 0){
       var empty = document.createElement("div");
       empty.className = "empty-note";
       empty.textContent = "Nog geen contacten ingesteld (via tab Beheer).";
-      contactListDashboard.appendChild(empty);
+      targetEl.appendChild(empty);
       return;
     }
     state.contacts.forEach(function(contact){
@@ -953,14 +1066,29 @@
       nameEl.className = "contact-name";
       nameEl.textContent = contact.name;
 
-      var numEl = document.createElement("span");
-      numEl.className = "contact-number";
+      var numEl;
+      if(clickablePhone){
+        numEl = document.createElement("a");
+        numEl.href = "tel:" + contact.number.replace(/[^0-9+]/g, "");
+        numEl.className = "contact-number contact-number-link";
+      }else{
+        numEl = document.createElement("span");
+        numEl.className = "contact-number";
+      }
       numEl.textContent = contact.number;
 
       li.appendChild(nameEl);
       li.appendChild(numEl);
-      contactListDashboard.appendChild(li);
+      targetEl.appendChild(li);
     });
+  }
+
+  function renderContactsDashboard(){
+    renderContactsInto(contactListDashboard, false);
+  }
+
+  function renderContactsTab(){
+    renderContactsInto(contactListTab, true);
   }
 
   // ---------- Contacten beheren (inline bewerkbaar) ----------
@@ -994,7 +1122,7 @@
       nameInput.addEventListener("input", function(){
         contact.name = nameInput.value;
         if(nameDebounce) clearTimeout(nameDebounce);
-        nameDebounce = setTimeout(function(){ saveState(); renderContactsDashboard(); }, 350);
+        nameDebounce = setTimeout(function(){ saveState(); renderContactsDashboard(); renderContactsTab(); }, 350);
       });
 
       var numInput = document.createElement("input");
@@ -1006,7 +1134,7 @@
       numInput.addEventListener("input", function(){
         contact.number = numInput.value;
         if(numDebounce) clearTimeout(numDebounce);
-        numDebounce = setTimeout(function(){ saveState(); renderContactsDashboard(); }, 350);
+        numDebounce = setTimeout(function(){ saveState(); renderContactsDashboard(); renderContactsTab(); }, 350);
       });
 
       editWrap.appendChild(nameInput);
@@ -1023,6 +1151,7 @@
         saveState();
         renderContactManage();
         renderContactsDashboard();
+        renderContactsTab();
       });
       li.appendChild(removeBtn);
 
@@ -1040,6 +1169,7 @@
     saveState();
     renderContactManage();
     renderContactsDashboard();
+    renderContactsTab();
   }
 
   addContactBtn.addEventListener("click", addContact);
@@ -1050,7 +1180,7 @@
   });
 
   // ======================================================
-  // ---------- Stadsteam Backup (dashboard weergave) ------
+  // ---------- Stadsteam Backup (dashboard + tabblad) -----
   // ======================================================
   var stadsteamSearch = document.getElementById("stadsteamSearch");
   var stadsteamFilters = document.getElementById("stadsteamFilters");
@@ -1058,11 +1188,17 @@
   var stadsteamFilterBtns = stadsteamFilters.querySelectorAll(".filter-pill");
   var stadsteamActiveFilter = "alle";
 
-  function filteredStadsteam(){
-    var q = stadsteamSearch.value.trim().toLowerCase();
+  var stadsteamSearchTab = document.getElementById("stadsteamSearchTab");
+  var stadsteamFiltersTab = document.getElementById("stadsteamFiltersTab");
+  var stadsteamListTab = document.getElementById("stadsteamListTab");
+  var stadsteamFilterBtnsTab = stadsteamFiltersTab.querySelectorAll(".filter-pill");
+  var stadsteamActiveFilterTab = "alle";
+
+  function filteredStadsteamBy(query, activeFilter){
+    var q = (query || "").trim().toLowerCase();
     return state.stadsteam
       .filter(function(s){
-        if(stadsteamActiveFilter !== "alle" && s.team !== stadsteamActiveFilter) return false;
+        if(activeFilter !== "alle" && s.team !== activeFilter) return false;
         if(!q) return true;
         return s.name.toLowerCase().indexOf(q) !== -1 ||
                TEAM_LABELS[s.team].toLowerCase().indexOf(q) !== -1 ||
@@ -1071,15 +1207,15 @@
       .sort(function(a, b){ return a.name.localeCompare(b.name, "nl"); });
   }
 
-  function renderStadsteamList(){
-    var list = filteredStadsteam();
-    stadsteamList.innerHTML = "";
+  function renderStadsteamListInto(targetEl, query, activeFilter){
+    var list = filteredStadsteamBy(query, activeFilter);
+    targetEl.innerHTML = "";
 
     if(list.length === 0){
       var empty = document.createElement("li");
       empty.className = "stadsteam-empty";
       empty.textContent = "Geen contacten gevonden.";
-      stadsteamList.appendChild(empty);
+      targetEl.appendChild(empty);
       return;
     }
 
@@ -1127,8 +1263,16 @@
       }
 
       li.appendChild(contactRow);
-      stadsteamList.appendChild(li);
+      targetEl.appendChild(li);
     });
+  }
+
+  function renderStadsteamList(){
+    renderStadsteamListInto(stadsteamList, stadsteamSearch.value, stadsteamActiveFilter);
+  }
+
+  function renderStadsteamListTab(){
+    renderStadsteamListInto(stadsteamListTab, stadsteamSearchTab.value, stadsteamActiveFilterTab);
   }
 
   stadsteamSearch.addEventListener("input", renderStadsteamList);
@@ -1138,6 +1282,16 @@
       stadsteamActiveFilter = btn.getAttribute("data-team");
       stadsteamFilterBtns.forEach(function(b){ b.classList.toggle("active", b === btn); });
       renderStadsteamList();
+    });
+  });
+
+  stadsteamSearchTab.addEventListener("input", renderStadsteamListTab);
+
+  stadsteamFilterBtnsTab.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      stadsteamActiveFilterTab = btn.getAttribute("data-team");
+      stadsteamFilterBtnsTab.forEach(function(b){ b.classList.toggle("active", b === btn); });
+      renderStadsteamListTab();
     });
   });
 
@@ -1215,6 +1369,7 @@
           saveState();
           renderStadsteamManage();
           renderStadsteamList();
+          renderStadsteamListTab();
         });
         li.appendChild(saveBtn);
 
@@ -1279,6 +1434,7 @@
           saveState();
           renderStadsteamManage();
           renderStadsteamList();
+          renderStadsteamListTab();
         });
         li.appendChild(removeBtn);
       }
@@ -1304,6 +1460,7 @@
     saveState();
     renderStadsteamManage();
     renderStadsteamList();
+    renderStadsteamListTab();
   }
 
   addStadsteamBtn.addEventListener("click", addStadsteamContact);
@@ -1477,7 +1634,6 @@
   var calMonthLabel = document.getElementById("calMonthLabel");
   var calPrevBtn = document.getElementById("calPrevBtn");
   var calNextBtn = document.getElementById("calNextBtn");
-  var calTodayBtn = document.getElementById("calTodayBtn");
 
   function renderMonthView(){
     var year = state.calYear;
@@ -1545,14 +1701,6 @@
   calNextBtn.addEventListener("click", function(){
     state.calMonth += 1;
     if(state.calMonth > 11){ state.calMonth = 0; state.calYear += 1; }
-    saveState();
-    renderMonthView();
-  });
-
-  calTodayBtn.addEventListener("click", function(){
-    var parts = todayISO().split("-");
-    state.calYear = parseInt(parts[0], 10);
-    state.calMonth = parseInt(parts[1], 10) - 1;
     saveState();
     renderMonthView();
   });
@@ -1778,10 +1926,13 @@
     renderResidentDetail();
     renderResidentManage();
     refreshResidentSelects();
+    renderResidentsFullList();
     renderContactsDashboard();
     renderContactManage();
+    renderContactsTab();
     renderStadsteamList();
     renderStadsteamManage();
+    renderStadsteamListTab();
     applyAllPanelStates();
     renderAgendaToday();
     renderAgendaViewSwitch();
