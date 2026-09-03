@@ -1175,14 +1175,15 @@
 
   .splash-arc-top{
     stroke: #9b8868;
-    stroke-width: 15;
+    stroke-width: 18.3;
     animation: splashArcDraw 0.35s linear 0.95s both;
   }
 
   .splash-arc-bottom{
     stroke: #e9be94;
-    stroke-width: 17;
+    stroke-width: 20.4;
     animation: splashArcDraw 0.35s linear 1.25s both;
+  }
   }
 
   .splash-title{
