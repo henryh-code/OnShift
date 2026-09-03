@@ -45,6 +45,7 @@
     <button class="tab-btn active" id="tabBtnDashboard" type="button" data-tab="dashboard">Dashboard</button>
     <button class="tab-btn" id="tabBtnAgenda" type="button" data-tab="agenda">Agenda</button>
     <button class="tab-btn" id="tabBtnBewoners" type="button" data-tab="bewoners">Bewoners</button>
+    <button class="tab-btn" id="tabBtnSancties" type="button" data-tab="sancties">Sancties</button>
     <button class="tab-btn" id="tabBtnContacten" type="button" data-tab="contacten">Contacten</button>
     <button class="tab-btn" id="tabBtnBeheer" type="button" data-tab="beheer">Instellingen / Beheer</button>
   </div>
@@ -61,6 +62,20 @@
       <div class="card-body" id="panelBody-overdracht">
         <textarea id="handoverNote" placeholder="Bijv. bewoner X onrustig geweest vannacht, huisarts is geïnformeerd..."></textarea>
         <div class="save-hint" id="saveHint">&nbsp;</div>
+      </div>
+    </section>
+
+    <!-- Aandachtsdossiers -->
+    <section class="card">
+      <div class="card-head" data-panel="aandacht" role="button" tabindex="0" aria-expanded="true">
+        <div class="card-title"><span class="dot"></span>Aandachtsdossiers &amp; Alertheid</div>
+        <div class="card-head-right">
+          <div class="count-pill" id="attentionCount">0 dossiers</div>
+          <span class="card-chevron">▾</span>
+        </div>
+      </div>
+      <div class="card-body" id="panelBody-aandacht">
+        <ul class="attention-list" id="attentionList"></ul>
       </div>
     </section>
 
@@ -274,6 +289,63 @@
     <footer class="hint">Tik op de statusstip om te wisselen, of op een bewoner om die op het Dashboard te openen.</footer>
   </div>
 
+  <!-- ===================== SANCTIES ===================== -->
+  <div class="tab-panel" id="panelSancties">
+
+    <!-- Officiële waarschuwingen -->
+    <section class="card">
+      <div class="card-head" data-panel="sanctiesWarnings" role="button" tabindex="0" aria-expanded="true">
+        <div class="card-title"><span class="dot"></span>Officiële waarschuwingen</div>
+        <div class="card-head-right">
+          <div class="count-pill" id="warningsCount">0</div>
+          <span class="card-chevron">▾</span>
+        </div>
+      </div>
+      <div class="card-body" id="panelBody-sanctiesWarnings">
+        <ul class="warnings-list" id="warningsList"></ul>
+        <div class="agenda-form">
+          <select id="newWarningResident" class="af-resident"></select>
+          <div class="af-row">
+            <input type="date" id="newWarningDate" class="af-title" style="flex:1;">
+            <select id="newWarningLevel" class="af-resident" style="flex:1;">
+              <option value="1e waarschuwing">1e waarschuwing</option>
+              <option value="2e waarschuwing">2e waarschuwing</option>
+              <option value="3e waarschuwing">3e waarschuwing</option>
+              <option value="laatste waarschuwing">Laatste waarschuwing</option>
+            </select>
+          </div>
+          <input type="text" id="newWarningNote" class="af-title" placeholder="Reden / omschrijving...">
+          <button id="addWarningBtn" type="button" class="af-submit">Waarschuwing toevoegen</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pandverboden & Schorsingen -->
+    <section class="card">
+      <div class="card-head" data-panel="sanctiesBans" role="button" tabindex="0" aria-expanded="true">
+        <div class="card-title"><span class="dot"></span>Pandverboden &amp; Schorsingen</div>
+        <div class="card-head-right">
+          <div class="count-pill" id="bansCount">0</div>
+          <span class="card-chevron">▾</span>
+        </div>
+      </div>
+      <div class="card-body" id="panelBody-sanctiesBans">
+        <ul class="bans-list" id="bansList"></ul>
+        <div class="agenda-form">
+          <input type="text" id="newBanName" class="af-title" placeholder="Naam...">
+          <input type="text" id="newBanClientnr" class="af-title" placeholder="Cliëntnr. (optioneel)">
+          <input type="text" id="newBanReason" class="af-title" placeholder="Reden...">
+          <div class="af-row">
+            <input type="date" id="newBanUntilDate" class="af-title" style="flex:1;">
+            <input type="time" id="newBanUntilTime" class="af-title" style="flex:1;">
+          </div>
+          <button id="addBanBtn" type="button" class="af-submit">Verbod toevoegen</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
   <!-- ===================== CONTACTEN ===================== -->
   <div class="tab-panel" id="panelContacten">
     <section class="card">
@@ -314,6 +386,7 @@
           <input type="text" id="newResidentInput" placeholder="Naam nieuwe bewoner...">
           <input type="text" id="newResidentRoom" placeholder="Kamer (optioneel)" style="max-width:120px;">
           <input type="text" id="newResidentClientnr" placeholder="Cliëntnr. (optioneel)" style="max-width:150px;">
+          <input type="text" id="newResidentLocker" placeholder="Kluis (optioneel)" style="max-width:110px;">
           <button id="addResidentBtn" type="button">Toevoegen</button>
         </div>
       </div>
@@ -398,7 +471,6 @@
     </div>
   </div>
 </div>
-
 
 <script src="./app.js" defer></script>
 <script>
