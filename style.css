@@ -996,6 +996,132 @@
 
   footer.hint{ text-align: center; font-size: 11px; color: var(--text-faint); margin-top: 4px; }
 
+  /* ---------- Aandachtsdossiers (badges + dashboardkaart) ---------- */
+  .attention-flag-badge{
+    font-size: 11px;
+    color: var(--danger);
+    background: var(--danger-soft);
+    border: 1px solid var(--danger);
+    padding: 1px 7px;
+    border-radius: 100px;
+    flex-shrink: 0;
+  }
+
+  .attention-list{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+
+  .attention-row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .attention-row:last-child{ border-bottom: none; }
+
+  .attention-row-main{ flex: 1; min-width: 0; }
+  .attention-row-name{ font-size: 13px; font-weight: 600; color: var(--text); }
+  .attention-row-note{ font-size: 12px; color: var(--text-soft); margin-top: 3px; word-break: break-word; }
+
+  .attention-toggle-wrap{ margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+
+  .attention-toggle-label{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+    cursor: pointer;
+  }
+
+  .attention-toggle-label input[type="checkbox"]{ width: 16px; height: 16px; accent-color: var(--danger); cursor: pointer; }
+
+  .attention-note-input{ margin-top: 8px; }
+
+  /* ---------- Bewoners-tab: waarschuwingsbadge ---------- */
+  .warning-count-badge{
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--warn);
+    background: var(--warn-soft);
+    border: 1px solid var(--warn);
+    padding: 1px 7px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .warning-count-badge:hover{ filter: brightness(1.15); }
+
+  /* ---------- Sancties: Officiële waarschuwingen ---------- */
+  .warnings-list{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; max-height: 380px; overflow-y: auto; }
+
+  .warning-row{
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    transition: background .5s ease;
+  }
+  .warning-row:last-child{ border-bottom: none; }
+  .warning-row-highlight{ background: var(--warn-soft); }
+
+  .warning-row-main{ flex: 1; min-width: 0; }
+  .warning-row-top{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .warning-row-name{ font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .warning-level-badge{
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--warn);
+    background: var(--warn-soft);
+    padding: 1px 8px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .warning-row-date{ font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  .warning-row-note{ font-size: 12px; color: var(--text-soft); margin-top: 3px; word-break: break-word; }
+
+  /* ---------- Sancties: Pandverboden & Schorsingen ---------- */
+  .bans-list{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; max-height: 380px; overflow-y: auto; }
+
+  .ban-row{
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--border-soft);
+    border-left: 3px solid transparent;
+  }
+  .ban-row:last-child{ border-bottom: none; }
+  .ban-row.ban-active{ border-left-color: var(--danger); }
+  .ban-row.ban-expired{ opacity: 0.55; }
+
+  .ban-row-main{ flex: 1; min-width: 0; }
+  .ban-row-top{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ban-row-name{ font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .ban-status-badge{ font-size: 10.5px; font-weight: 600; padding: 1px 8px; border-radius: 100px; flex-shrink: 0; white-space: nowrap; }
+  .ban-status-active{ color: var(--danger); background: var(--danger-soft); }
+  .ban-status-expired{ color: var(--text-faint); background: var(--bg-raised); }
+
+  .ban-row-reason{ font-size: 12px; color: var(--text-soft); margin-top: 3px; word-break: break-word; }
+  .ban-row-until{ font-size: 11px; color: var(--text-faint); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Zoekbalk: actief-pandverbod-waarschuwing ---------- */
+  .resident-dropdown-ban-warning{
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-bottom: 1px solid var(--danger);
+    padding: 9px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
   @media (max-width: 380px){
     .app{ padding: 12px 10px 32px; }
     .cal-month-label{ min-width: 100px; font-size: 12.5px; }
@@ -1047,4 +1173,3 @@
     0%{ transform: translateY(4px); opacity: 0; }
     100%{ transform: translateY(0); opacity: 1; }
   }
-
