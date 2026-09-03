@@ -21,14 +21,36 @@
 <body>
 <div id="splashOverlay" class="splash-overlay">
   <div class="splash-content">
-    <img src="./icon.png" alt="OnShift Logo" class="splash-logo">
+    <svg class="splash-logo-svg" viewBox="0 0 400 200" width="168" height="84" role="img" aria-label="OnShift logo">
+      <defs>
+        <linearGradient id="splashTrackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#6fa693"/>
+          <stop offset="100%" stop-color="#e0a568"/>
+        </linearGradient>
+      </defs>
+      <rect class="splash-track" x="0" y="0" width="400" height="200" rx="100" fill="url(#splashTrackGradient)"></rect>
+      <g class="splash-arcs" fill="none" stroke="rgba(23,24,26,0.45)" stroke-width="14" stroke-linecap="round">
+        <path class="splash-arc-top" pathLength="100" d="M300 43 A32 32 0 0 1 300 107"></path>
+        <path class="splash-arc-bottom" pathLength="100" d="M300 93 A32 32 0 0 0 300 157"></path>
+      </g>
+      <circle class="splash-knob" cx="100" cy="100" r="72" fill="#ffffff"></circle>
+    </svg>
     <div class="splash-title">OnShift</div>
   </div>
 </div>
 <script>
-  if (sessionStorage.getItem("onshift_splash_shown")) {
-    document.getElementById("splashOverlay").style.display = "none";
-  }
+  (function(){
+    var overlay = document.getElementById("splashOverlay");
+    if (sessionStorage.getItem("onshift_splash_shown")) {
+      overlay.style.display = "none";
+      return;
+    }
+    sessionStorage.setItem("onshift_splash_shown", "1");
+
+    setTimeout(function(){ overlay.classList.add("splash-fade-out"); }, 2100);
+    overlay.addEventListener("transitionend", function(){ overlay.remove(); });
+    setTimeout(function(){ if (overlay && overlay.parentNode) overlay.remove(); }, 2700);
+  })();
 </script>
 
 <div class="app">
