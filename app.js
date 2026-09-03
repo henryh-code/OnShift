@@ -6,23 +6,6 @@
 
 (function(){
   "use strict";
-  
-  // ---------- Splash screen (alleen bij koude start) ----------
-  var splashOverlay = document.getElementById("splashOverlay");
-  if(splashOverlay){
-    if(splashOverlay.style.display === "none"){
-      // al gezien deze sessie (warme start) — direct verwijderen, geen vertraging
-      splashOverlay.remove();
-    }else{
-      splashOverlay.addEventListener("transitionend", function(){
-        splashOverlay.remove();
-      });
-      setTimeout(function(){
-        splashOverlay.classList.add("splash-fade-out");
-        try{ sessionStorage.setItem("onshift_splash_shown", "true"); }catch(e){ /* sessionStorage niet beschikbaar */ }
-      }, 1100);
-    }
-  }
 
   var STORAGE_KEY = "wb_diensten_dashboard";
   var LEGACY_KEYS = ["wb_diensten_dashboard_v4", "wb_diensten_dashboard_v3", "wb_diensten_dashboard_v2", "wb_diensten_dashboard_v1"];
