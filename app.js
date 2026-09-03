@@ -90,6 +90,21 @@
     return prefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
   }
 
+function openZorgNedLink(url){
+  var isStandalone = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  if (isStandalone && isIOS) {
+    // Forceert openen in de native Safari-app i.p.v. de WebSheet-overlay,
+    // zodat de 2FA/Authenticator-sessie bewaard blijft.
+    window.location.href = url.replace(/^https:\/\//, "x-safari-https://");
+  } else {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
   function todayISO(){
     var d = new Date();
     var m = ("0" + (d.getMonth() + 1)).slice(-2);
@@ -683,14 +698,14 @@
       nameWrap.appendChild(attentionBadge);
     }
 
-    if(resident.clientnr){
-      var zorgnedLink = document.createElement("a");
+        if(resident.clientnr){
+      var zorgnedUrl = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(resident.clientnr) + "&section=1";
+      var zorgnedLink = document.createElement("button");
+      zorgnedLink.type = "button";
       zorgnedLink.className = "zorgned-badge";
-      zorgnedLink.href = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(resident.clientnr) + "&section=1";
-      zorgnedLink.target = "_blank";
-      zorgnedLink.rel = "noopener noreferrer";
       zorgnedLink.textContent = "ZorgNed ↗";
       zorgnedLink.setAttribute("aria-label", "Open cliëntdossier in ZorgNed");
+      zorgnedLink.addEventListener("click", function(){ openZorgNedLink(zorgnedUrl); });
       nameWrap.appendChild(zorgnedLink);
     }
 
@@ -1886,13 +1901,13 @@
       nameEl.textContent = ban.name;
       top.appendChild(nameEl);
 
-      if(ban.clientnr){
-        var zorgnedLink = document.createElement("a");
+            if(ban.clientnr){
+        var zorgnedUrl = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(ban.clientnr) + "&section=1";
+        var zorgnedLink = document.createElement("button");
+        zorgnedLink.type = "button";
         zorgnedLink.className = "zorgned-badge";
-        zorgnedLink.href = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(ban.clientnr) + "&section=1";
-        zorgnedLink.target = "_blank";
-        zorgnedLink.rel = "noopener noreferrer";
         zorgnedLink.textContent = "ZorgNed ↗";
+        zorgnedLink.addEventListener("click", function(){ openZorgNedLink(zorgnedUrl); });
         top.appendChild(zorgnedLink);
       }
 
