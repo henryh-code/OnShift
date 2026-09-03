@@ -556,7 +556,13 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .zorgned-badge{
+   .zorgned-badge{
+    font: inherit;
+    line-height: normal;
+    display: inline-block;
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
     font-size: 11px;
     color: var(--accent-text);
     background: var(--accent-soft);
