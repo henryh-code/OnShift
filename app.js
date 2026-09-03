@@ -1,28 +1,11 @@
 /* ===========================================================
    Diensten Dashboard — app.js
    State management, localStorage-migraties, bewonerszoekbalk,
-   agenda, taken, noodcontacten en stadsteams.
+   agenda, taken, noodcontacten, stadsteams en sancties.
    =========================================================== */
 
 (function(){
   "use strict";
-
-  // ---------- Splash screen (alleen bij koude start) ----------
-  var splashOverlay = document.getElementById("splashOverlay");
-  if(splashOverlay){
-    if(splashOverlay.style.display === "none"){
-      // al gezien deze sessie (warme start) — direct verwijderen, geen vertraging
-      splashOverlay.remove();
-    }else{
-      splashOverlay.addEventListener("transitionend", function(){
-        splashOverlay.remove();
-      });
-      setTimeout(function(){
-        splashOverlay.classList.add("splash-fade-out");
-        try{ sessionStorage.setItem("onshift_splash_shown", "true"); }catch(e){ /* sessionStorage niet beschikbaar */ }
-      }, 1100);
-    }
-  }
 
   var STORAGE_KEY = "wb_diensten_dashboard";
   var LEGACY_KEYS = ["wb_diensten_dashboard_v4", "wb_diensten_dashboard_v3", "wb_diensten_dashboard_v2", "wb_diensten_dashboard_v1"];
@@ -44,12 +27,12 @@
   ];
 
   var DEFAULT_RESIDENTS = [
-    { id: "r1", name: "J. de Vries", room: "101", status: "unseen", note: "" },
-    { id: "r2", name: "M. El Amrani", room: "102", status: "unseen", note: "" },
-    { id: "r3", name: "R. Boersema", room: "103", status: "unseen", note: "" },
-    { id: "r4", name: "S. Kowalski", room: "104", status: "unseen", note: "" },
-    { id: "r5", name: "T. Hendriks", room: "105", status: "unseen", note: "" },
-    { id: "r6", name: "L. van Dijk", room: "106", status: "unseen", note: "" }
+    { id: "r1", name: "J. de Vries", room: "101", status: "unseen", note: "", clientnr: "", locker: "", isAttention: false, attentionNote: "" },
+    { id: "r2", name: "M. El Amrani", room: "102", status: "unseen", note: "", clientnr: "", locker: "", isAttention: false, attentionNote: "" },
+    { id: "r3", name: "R. Boersema", room: "103", status: "unseen", note: "", clientnr: "", locker: "", isAttention: false, attentionNote: "" },
+    { id: "r4", name: "S. Kowalski", room: "104", status: "unseen", note: "", clientnr: "", locker: "", isAttention: false, attentionNote: "" },
+    { id: "r5", name: "T. Hendriks", room: "105", status: "unseen", note: "", clientnr: "", locker: "", isAttention: false, attentionNote: "" },
+    { id: "r6", name: "L. van Dijk", room: "106", status: "unseen", note: "", clientnr: "", locker: "", isAttention: false, attentionNote: "" }
   ];
 
   var DEFAULT_CONTACTS = [
@@ -72,6 +55,7 @@
 
   var DEFAULT_PANELS_OPEN = {
     overdracht: true,
+    aandacht: true,
     taken: true,
     bewoners: true,
     agendaVandaag: true,
@@ -80,7 +64,9 @@
     beheerBewoners: true,
     beheerContacten: true,
     beheerStadsteam: false,
-    beheerData: false
+    beheerData: false,
+    sanctiesWarnings: true,
+    sanctiesBans: true
   };
 
   function uid(prefix){
@@ -104,6 +90,8 @@
       contacts: JSON.parse(JSON.stringify(DEFAULT_CONTACTS)),
       stadsteam: JSON.parse(JSON.stringify(DEFAULT_STADSTEAM)),
       events: [],
+      warnings: [],
+      bans: [],
       panelsOpen: JSON.parse(JSON.stringify(DEFAULT_PANELS_OPEN)),
       agendaView: "month",
       agendaSelectedDate: t,
@@ -129,7 +117,33 @@
       room: typeof r.room === "string" ? r.room : "",
       status: status,
       note: typeof r.note === "string" ? r.note : "",
-      clientnr: typeof r.clientnr === "string" ? r.clientnr : ""
+      clientnr: typeof r.clientnr === "string" ? r.clientnr : "",
+      locker: typeof r.locker === "string" ? r.locker : "",
+      isAttention: !!r.isAttention,
+      attentionNote: typeof r.attentionNote === "string" ? r.attentionNote : ""
+    };
+  }
+
+  function normalizeWarning(w){
+    w = w || {};
+    return {
+      id: w.id || uid("warn"),
+      residentId: typeof w.residentId === "string" ? w.residentId : "",
+      date: typeof w.date === "string" ? w.date : todayISO(),
+      level: typeof w.level === "string" ? w.level : "1e waarschuwing",
+      note: typeof w.note === "string" ? w.note : ""
+    };
+  }
+
+  function normalizeBan(b){
+    b = b || {};
+    return {
+      id: b.id || uid("ban"),
+      name: typeof b.name === "string" ? b.name : "",
+      clientnr: typeof b.clientnr === "string" ? b.clientnr : "",
+      reason: typeof b.reason === "string" ? b.reason : "",
+      untilDate: typeof b.untilDate === "string" ? b.untilDate : "",
+      untilTime: typeof b.untilTime === "string" ? b.untilTime : ""
     };
   }
 
@@ -161,7 +175,6 @@
         if(typeof parsed[key] === "boolean") base[key] = parsed[key];
       });
     }
-    // migratie: oudere versies kenden alleen accordionOpen voor het contactenpaneel
     if(typeof parsed !== "object" || parsed === null || typeof parsed.contacten !== "boolean"){
       if(typeof legacyAccordionOpen === "boolean") base.contacten = legacyAccordionOpen;
     }
@@ -189,6 +202,8 @@
       contacts: Array.isArray(parsed.contacts) ? parsed.contacts.map(normalizeContact) : base.contacts,
       stadsteam: Array.isArray(parsed.stadsteam) ? parsed.stadsteam.map(normalizeStadsteamContact) : base.stadsteam,
       events: Array.isArray(parsed.events) ? parsed.events.map(normalizeEvent) : base.events,
+      warnings: Array.isArray(parsed.warnings) ? parsed.warnings.map(normalizeWarning) : base.warnings,
+      bans: Array.isArray(parsed.bans) ? parsed.bans.map(normalizeBan) : base.bans,
       panelsOpen: normalizePanelsOpen(parsed.panelsOpen, parsed.accordionOpen),
       agendaView: (parsed.agendaView === "day" ? "day" : "month"),
       agendaSelectedDate: typeof parsed.agendaSelectedDate === "string" ? parsed.agendaSelectedDate : base.agendaSelectedDate,
@@ -278,7 +293,6 @@
     syncMinuteDisabled(hourSel, minuteSel);
   }
 
-
   function formatDateLabel(iso){
     var parts = iso.split("-");
     var d = new Date(parseInt(parts[0],10), parseInt(parts[1],10) - 1, parseInt(parts[2],10));
@@ -306,6 +320,7 @@
     dashboard: "panelDashboard",
     agenda: "panelAgenda",
     bewoners: "panelBewoners",
+    sancties: "panelSancties",
     contacten: "panelContacten",
     beheer: "panelBeheer"
   };
@@ -324,6 +339,7 @@
     });
     if(tab === "bewoners") renderResidentsFullList();
     if(tab === "contacten"){ renderStadsteamListTab(); renderContactsTab(); }
+    if(tab === "sancties"){ renderWarningsList(); renderBansList(); }
   }
 
   tabButtons.forEach(function(btn){
@@ -456,8 +472,21 @@
   }
 
   function renderResidentDropdown(){
-    var list = filteredResidents(residentSearch.value);
+    var query = residentSearch.value;
+    var list = filteredResidents(query);
     residentDropdown.innerHTML = "";
+
+    var activeBan = query.trim() ? activeBanForName(query) : null;
+    if(activeBan){
+      var banWarning = document.createElement("div");
+      banWarning.className = "resident-dropdown-ban-warning";
+      var untilText = activeBan.untilDate
+        ? (activeBan.untilDate + (activeBan.untilTime ? " " + activeBan.untilTime : ""))
+        : "onbekende datum";
+      banWarning.textContent = "⚠️ LET OP: ACTIEF PANDVERBOD voor " + activeBan.name + " tot " + untilText +
+        (activeBan.reason ? " (" + activeBan.reason + ")" : "");
+      residentDropdown.appendChild(banWarning);
+    }
 
     if(list.length === 0){
       var empty = document.createElement("div");
@@ -602,7 +631,7 @@
     var card = document.createElement("div");
     card.className = "resident-detail-card " + STATUS_META[resident.status].cls;
 
-    // ---- Kop: naam, kamer, vorige/volgende ----
+    // ---- Kop: naam, kamer, kluis, aandacht, vorige/volgende ----
     var head = document.createElement("div");
     head.className = "resident-detail-head";
 
@@ -621,6 +650,20 @@
       roomBadge.className = "resident-detail-room";
       roomBadge.textContent = "Kamer " + resident.room;
       nameWrap.appendChild(roomBadge);
+    }
+
+    if(resident.locker){
+      var lockerBadge = document.createElement("span");
+      lockerBadge.className = "resident-detail-room";
+      lockerBadge.textContent = "Kluis " + resident.locker;
+      nameWrap.appendChild(lockerBadge);
+    }
+
+    if(resident.isAttention){
+      var attentionBadge = document.createElement("span");
+      attentionBadge.className = "attention-flag-badge";
+      attentionBadge.textContent = "🚩 Aandacht";
+      nameWrap.appendChild(attentionBadge);
     }
 
     if(resident.clientnr){
@@ -673,6 +716,52 @@
     });
     card.appendChild(noteInput);
 
+    // ---- Aandachtsdossier toggle ----
+    var attentionWrap = document.createElement("div");
+    attentionWrap.className = "attention-toggle-wrap";
+
+    var attentionLabel = document.createElement("label");
+    attentionLabel.className = "attention-toggle-label";
+
+    var attentionCheckbox = document.createElement("input");
+    attentionCheckbox.type = "checkbox";
+    attentionCheckbox.checked = !!resident.isAttention;
+
+    var attentionLabelText = document.createElement("span");
+    attentionLabelText.textContent = "Op aandachtslijst zetten";
+
+    attentionLabel.appendChild(attentionCheckbox);
+    attentionLabel.appendChild(attentionLabelText);
+    attentionWrap.appendChild(attentionLabel);
+
+    var attentionNoteInput = document.createElement("input");
+    attentionNoteInput.type = "text";
+    attentionNoteInput.className = "resident-note attention-note-input";
+    attentionNoteInput.placeholder = "Waarom aandacht nodig is...";
+    attentionNoteInput.value = resident.attentionNote || "";
+    attentionNoteInput.style.display = resident.isAttention ? "block" : "none";
+    var attentionNoteDebounce = null;
+    attentionNoteInput.addEventListener("input", function(){
+      resident.attentionNote = attentionNoteInput.value;
+      if(attentionNoteDebounce) clearTimeout(attentionNoteDebounce);
+      attentionNoteDebounce = setTimeout(function(){
+        saveState();
+        renderAandachtCard();
+      }, 350);
+    });
+
+    attentionCheckbox.addEventListener("change", function(){
+      resident.isAttention = attentionCheckbox.checked;
+      attentionNoteInput.style.display = resident.isAttention ? "block" : "none";
+      saveState();
+      renderResidentDetail();
+      renderAandachtCard();
+      renderResidentsFullList();
+    });
+
+    attentionWrap.appendChild(attentionNoteInput);
+    card.appendChild(attentionWrap);
+
     residentDetailWrap.appendChild(card);
   }
 
@@ -683,6 +772,58 @@
     if(idx === -1) idx = 0;
     else idx = (idx + delta + list.length) % list.length;
     selectResident(list[idx].id);
+  }
+
+  // ======================================================
+  // ---------- Aandachtsdossiers & Alertheid (Dashboard) --
+  // ======================================================
+  var attentionList = document.getElementById("attentionList");
+  var attentionCountEl = document.getElementById("attentionCount");
+
+  function renderAandachtCard(){
+    var flagged = sortedResidents().filter(function(r){ return r.isAttention; });
+    attentionCountEl.textContent = flagged.length + (flagged.length === 1 ? " dossier" : " dossiers");
+    attentionList.innerHTML = "";
+
+    if(flagged.length === 0){
+      var empty = document.createElement("li");
+      empty.className = "empty-note";
+      empty.textContent = "Geen actieve aandachtsdossiers.";
+      attentionList.appendChild(empty);
+      return;
+    }
+
+    flagged.forEach(function(resident){
+      var li = document.createElement("li");
+      li.className = "attention-row";
+
+      var main = document.createElement("div");
+      main.className = "attention-row-main";
+
+      var nameEl = document.createElement("span");
+      nameEl.className = "attention-row-name";
+      nameEl.textContent = "🚩 " + resident.name;
+      main.appendChild(nameEl);
+
+      if(resident.attentionNote){
+        var noteEl = document.createElement("div");
+        noteEl.className = "attention-row-note";
+        noteEl.textContent = resident.attentionNote;
+        main.appendChild(noteEl);
+      }
+
+      li.appendChild(main);
+
+      var openBtn = document.createElement("button");
+      openBtn.type = "button";
+      openBtn.className = "resident-nav-btn";
+      openBtn.setAttribute("aria-label", "Open " + resident.name + " op het Dashboard");
+      openBtn.textContent = "›";
+      openBtn.addEventListener("click", function(){ selectResident(resident.id); });
+      li.appendChild(openBtn);
+
+      attentionList.appendChild(li);
+    });
   }
 
   function updateSortDropdownUI(){
@@ -733,6 +874,7 @@
   var newResidentInput = document.getElementById("newResidentInput");
   var newResidentRoom = document.getElementById("newResidentRoom");
   var newResidentClientnr = document.getElementById("newResidentClientnr");
+  var newResidentLocker = document.getElementById("newResidentLocker");
   var addResidentBtn = document.getElementById("addResidentBtn");
 
   function renderResidentManage(){
@@ -766,6 +908,7 @@
           if(state.dashboardSelectedResidentId === resident.id) renderResidentDetail();
           if(residentDropdown.classList.contains("open")) renderResidentDropdown();
           refreshResidentSelects();
+          refreshWarningResidentSelect();
           renderResidentsFullList();
         }, 350);
       });
@@ -785,6 +928,7 @@
           if(state.dashboardSelectedResidentId === resident.id) renderResidentDetail();
           if(residentDropdown.classList.contains("open")) renderResidentDropdown();
           refreshResidentSelects();
+          refreshWarningResidentSelect();
           renderResidentsFullList();
         }, 350);
       });
@@ -805,9 +949,27 @@
         }, 350);
       });
 
+      var lockerInput = document.createElement("input");
+      lockerInput.type = "text";
+      lockerInput.className = "f-side";
+      lockerInput.placeholder = "Kluis";
+      lockerInput.value = resident.locker || "";
+      lockerInput.setAttribute("aria-label", "Kluisnummer");
+      var lockerDebounce = null;
+      lockerInput.addEventListener("input", function(){
+        resident.locker = lockerInput.value;
+        if(lockerDebounce) clearTimeout(lockerDebounce);
+        lockerDebounce = setTimeout(function(){
+          saveState();
+          if(state.dashboardSelectedResidentId === resident.id) renderResidentDetail();
+          renderResidentsFullList();
+        }, 350);
+      });
+
       editWrap.appendChild(nameInput);
       editWrap.appendChild(roomInput);
       editWrap.appendChild(clientnrInput);
+      editWrap.appendChild(lockerInput);
       li.appendChild(editWrap);
 
       var removeBtn = document.createElement("button");
@@ -823,8 +985,10 @@
         renderResidentSummary();
         renderResidentDetail();
         refreshResidentSelects();
+        refreshWarningResidentSelect();
         if(residentDropdown.classList.contains("open")) renderResidentDropdown();
         renderResidentsFullList();
+        renderAandachtCard();
       });
       li.appendChild(removeBtn);
 
@@ -841,21 +1005,26 @@
       room: newResidentRoom.value.trim(),
       status: "unseen",
       note: "",
-      clientnr: newResidentClientnr.value.trim()
+      clientnr: newResidentClientnr.value.trim(),
+      locker: newResidentLocker.value.trim(),
+      isAttention: false,
+      attentionNote: ""
     });
     newResidentInput.value = "";
     newResidentRoom.value = "";
     newResidentClientnr.value = "";
+    newResidentLocker.value = "";
     saveState();
     renderResidentManage();
     renderResidentSummary();
     refreshResidentSelects();
+    refreshWarningResidentSelect();
     if(residentDropdown.classList.contains("open")) renderResidentDropdown();
     renderResidentsFullList();
   }
 
   addResidentBtn.addEventListener("click", addResident);
-  [newResidentInput, newResidentRoom, newResidentClientnr].forEach(function(el){
+  [newResidentInput, newResidentRoom, newResidentClientnr, newResidentLocker].forEach(function(el){
     el.addEventListener("keydown", function(e){
       if(e.key === "Enter"){ e.preventDefault(); addResident(); }
     });
@@ -904,7 +1073,7 @@
 
       var nameEl = document.createElement("span");
       nameEl.className = "resident-full-name";
-      nameEl.textContent = resident.name;
+      nameEl.textContent = (resident.isAttention ? "🚩 " : "") + resident.name;
       top.appendChild(nameEl);
 
       if(resident.room){
@@ -912,6 +1081,37 @@
         roomEl.className = "resident-full-room";
         roomEl.textContent = "Kamer " + resident.room;
         top.appendChild(roomEl);
+      }
+
+      if(resident.locker){
+        var lockerEl = document.createElement("span");
+        lockerEl.className = "resident-full-room";
+        lockerEl.textContent = "Kluis " + resident.locker;
+        top.appendChild(lockerEl);
+      }
+
+      var residentWarningCount = warningsForResident(resident.id).length;
+      if(residentWarningCount > 0){
+        var warnBadge = document.createElement("button");
+        warnBadge.type = "button";
+        warnBadge.className = "warning-count-badge";
+        warnBadge.textContent = "⚠️ " + residentWarningCount;
+        warnBadge.setAttribute("aria-label", "Bekijk waarschuwingen van " + resident.name);
+        warnBadge.addEventListener("click", function(e){
+          e.stopPropagation();
+          activateTab("sancties");
+          setTimeout(function(){
+            var firstWarning = warningsForResident(resident.id)[0];
+            if(!firstWarning) return;
+            var rowEl = document.getElementById("warning-" + firstWarning.id);
+            if(rowEl){
+              rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+              rowEl.classList.add("warning-row-highlight");
+              setTimeout(function(){ rowEl.classList.remove("warning-row-highlight"); }, 1600);
+            }
+          }, 150);
+        });
+        top.appendChild(warnBadge);
       }
 
       main.appendChild(top);
@@ -936,11 +1136,11 @@
       }
 
       li.addEventListener("click", function(e){
-        if(e.target.closest(".status-indicator-wrap")) return;
+        if(e.target.closest(".status-indicator-wrap") || e.target.closest(".warning-count-badge")) return;
         openOnDashboard();
       });
       li.addEventListener("keydown", function(e){
-        if(e.target.closest(".status-indicator-wrap")) return;
+        if(e.target.closest(".status-indicator-wrap") || e.target.closest(".warning-count-badge")) return;
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
           openOnDashboard();
@@ -1031,7 +1231,7 @@
     }else{
       body.style.overflow = "hidden";
       body.style.maxHeight = body.scrollHeight + "px";
-      void body.offsetHeight; // forceer reflow zodat de transitie vanaf de huidige hoogte start
+      void body.offsetHeight; // forceer reflow
       requestAnimationFrame(function(){
         body.style.maxHeight = "0px";
       });
@@ -1487,6 +1687,260 @@
     });
   });
 
+  // ======================================================
+  // ---------- Sancties: Officiële waarschuwingen ---------
+  // ======================================================
+  var warningsList = document.getElementById("warningsList");
+  var warningsCountEl = document.getElementById("warningsCount");
+  var newWarningResident = document.getElementById("newWarningResident");
+  var newWarningDate = document.getElementById("newWarningDate");
+  var newWarningLevel = document.getElementById("newWarningLevel");
+  var newWarningNote = document.getElementById("newWarningNote");
+  var addWarningBtn = document.getElementById("addWarningBtn");
+
+  function refreshWarningResidentSelect(){
+    if(!newWarningResident) return;
+    var currentVal = newWarningResident.value;
+    newWarningResident.innerHTML = "";
+    var list = state.residents.slice().sort(function(a, b){ return a.name.localeCompare(b.name, "nl"); });
+    list.forEach(function(r){
+      var opt = document.createElement("option");
+      opt.value = r.id;
+      opt.textContent = r.name + (r.room ? " (Kamer " + r.room + ")" : "");
+      newWarningResident.appendChild(opt);
+    });
+    if(list.some(function(r){ return r.id === currentVal; })) newWarningResident.value = currentVal;
+  }
+
+  function warningsForResident(residentId){
+    return state.warnings.filter(function(w){ return w.residentId === residentId; });
+  }
+
+  function renderWarningsList(){
+    var list = state.warnings.slice().sort(function(a, b){ return b.date < a.date ? -1 : (b.date > a.date ? 1 : 0); });
+    warningsCountEl.textContent = String(list.length);
+    warningsList.innerHTML = "";
+
+    if(list.length === 0){
+      var empty = document.createElement("li");
+      empty.className = "empty-note";
+      empty.textContent = "Nog geen waarschuwingen geregistreerd.";
+      warningsList.appendChild(empty);
+      return;
+    }
+
+    list.forEach(function(w){
+      var resident = getResidentById(w.residentId);
+      var li = document.createElement("li");
+      li.className = "warning-row";
+      li.id = "warning-" + w.id;
+
+      var main = document.createElement("div");
+      main.className = "warning-row-main";
+
+      var top = document.createElement("div");
+      top.className = "warning-row-top";
+
+      var nameEl = document.createElement("span");
+      nameEl.className = "warning-row-name";
+      nameEl.textContent = resident ? resident.name : "(verwijderde bewoner)";
+      top.appendChild(nameEl);
+
+      var levelEl = document.createElement("span");
+      levelEl.className = "warning-level-badge";
+      levelEl.textContent = w.level;
+      top.appendChild(levelEl);
+
+      var dateEl = document.createElement("span");
+      dateEl.className = "warning-row-date";
+      dateEl.textContent = w.date;
+      top.appendChild(dateEl);
+
+      main.appendChild(top);
+
+      if(w.note){
+        var noteEl = document.createElement("div");
+        noteEl.className = "warning-row-note";
+        noteEl.textContent = w.note;
+        main.appendChild(noteEl);
+      }
+
+      li.appendChild(main);
+
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "remove-btn";
+      removeBtn.type = "button";
+      removeBtn.setAttribute("aria-label", "Waarschuwing verwijderen");
+      removeBtn.textContent = "✕";
+      removeBtn.addEventListener("click", function(){
+        state.warnings = state.warnings.filter(function(x){ return x.id !== w.id; });
+        saveState();
+        renderWarningsList();
+        renderResidentsFullList();
+      });
+      li.appendChild(removeBtn);
+
+      warningsList.appendChild(li);
+    });
+  }
+
+  function addWarning(){
+    if(!newWarningResident.value) return;
+    state.warnings.push({
+      id: uid("warn"),
+      residentId: newWarningResident.value,
+      date: newWarningDate.value || todayISO(),
+      level: newWarningLevel.value,
+      note: newWarningNote.value.trim()
+    });
+    newWarningNote.value = "";
+    saveState();
+    renderWarningsList();
+    renderResidentsFullList();
+  }
+
+  addWarningBtn.addEventListener("click", addWarning);
+  newWarningNote.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); addWarning(); }
+  });
+  newWarningDate.value = todayISO();
+
+  // ======================================================
+  // ---------- Sancties: Pandverboden & Schorsingen -------
+  // ======================================================
+  var bansList = document.getElementById("bansList");
+  var bansCountEl = document.getElementById("bansCount");
+  var newBanName = document.getElementById("newBanName");
+  var newBanClientnr = document.getElementById("newBanClientnr");
+  var newBanReason = document.getElementById("newBanReason");
+  var newBanUntilDate = document.getElementById("newBanUntilDate");
+  var newBanUntilTime = document.getElementById("newBanUntilTime");
+  var addBanBtn = document.getElementById("addBanBtn");
+
+  function banUntilTimestamp(ban){
+    if(!ban.untilDate) return null;
+    return new Date(ban.untilDate + "T" + (ban.untilTime || "23:59") + ":00").getTime();
+  }
+
+  function isBanActive(ban){
+    var ts = banUntilTimestamp(ban);
+    if(ts === null) return true;
+    return ts > Date.now();
+  }
+
+  function activeBanForName(name){
+    var q = (name || "").trim().toLowerCase();
+    if(!q) return null;
+    return state.bans.filter(isBanActive).find(function(b){
+      return b.name.toLowerCase().indexOf(q) !== -1 || q.indexOf(b.name.toLowerCase()) !== -1;
+    }) || null;
+  }
+
+  function renderBansList(){
+    var list = state.bans.slice().sort(function(a, b){
+      var aActive = isBanActive(a), bActive = isBanActive(b);
+      if(aActive !== bActive) return aActive ? -1 : 1;
+      return a.name.localeCompare(b.name, "nl");
+    });
+    bansCountEl.textContent = String(list.length);
+    bansList.innerHTML = "";
+
+    if(list.length === 0){
+      var empty = document.createElement("li");
+      empty.className = "empty-note";
+      empty.textContent = "Nog geen pandverboden of schorsingen geregistreerd.";
+      bansList.appendChild(empty);
+      return;
+    }
+
+    list.forEach(function(ban){
+      var active = isBanActive(ban);
+      var li = document.createElement("li");
+      li.className = "ban-row" + (active ? " ban-active" : " ban-expired");
+
+      var main = document.createElement("div");
+      main.className = "ban-row-main";
+
+      var top = document.createElement("div");
+      top.className = "ban-row-top";
+
+      var nameEl = document.createElement("span");
+      nameEl.className = "ban-row-name";
+      nameEl.textContent = ban.name;
+      top.appendChild(nameEl);
+
+      if(ban.clientnr){
+        var zorgnedLink = document.createElement("a");
+        zorgnedLink.className = "zorgned-badge";
+        zorgnedLink.href = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(ban.clientnr) + "&section=1";
+        zorgnedLink.target = "_blank";
+        zorgnedLink.rel = "noopener noreferrer";
+        zorgnedLink.textContent = "ZorgNed ↗";
+        top.appendChild(zorgnedLink);
+      }
+
+      var statusBadge = document.createElement("span");
+      statusBadge.className = active ? "ban-status-badge ban-status-active" : "ban-status-badge ban-status-expired";
+      statusBadge.textContent = active ? "Actief" : "Verlopen";
+      top.appendChild(statusBadge);
+
+      main.appendChild(top);
+
+      var reasonEl = document.createElement("div");
+      reasonEl.className = "ban-row-reason";
+      reasonEl.textContent = ban.reason || "(geen reden opgegeven)";
+      main.appendChild(reasonEl);
+
+      var untilEl = document.createElement("div");
+      untilEl.className = "ban-row-until";
+      untilEl.textContent = ban.untilDate
+        ? ("Tot " + ban.untilDate + (ban.untilTime ? " " + ban.untilTime : ""))
+        : "Geen einddatum bekend";
+      main.appendChild(untilEl);
+
+      li.appendChild(main);
+
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "remove-btn";
+      removeBtn.type = "button";
+      removeBtn.setAttribute("aria-label", "Verbod verwijderen");
+      removeBtn.textContent = "✕";
+      removeBtn.addEventListener("click", function(){
+        state.bans = state.bans.filter(function(x){ return x.id !== ban.id; });
+        saveState();
+        renderBansList();
+      });
+      li.appendChild(removeBtn);
+
+      bansList.appendChild(li);
+    });
+  }
+
+  function addBan(){
+    var name = newBanName.value.trim();
+    if(!name) return;
+    state.bans.push({
+      id: uid("ban"),
+      name: name,
+      clientnr: newBanClientnr.value.trim(),
+      reason: newBanReason.value.trim(),
+      untilDate: newBanUntilDate.value,
+      untilTime: newBanUntilTime.value
+    });
+    newBanName.value = "";
+    newBanClientnr.value = "";
+    newBanReason.value = "";
+    newBanUntilDate.value = "";
+    newBanUntilTime.value = "";
+    saveState();
+    renderBansList();
+  }
+
+  addBanBtn.addEventListener("click", addBan);
+  newBanReason.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); addBan(); }
+  });
+
   // ---------- Agenda: helpers ----------
   function eventsForDate(iso){
     return state.events
@@ -1923,6 +2377,8 @@
     renderResidentDetail();
     renderResidentManage();
     if(residentDropdown.classList.contains("open")) renderResidentDropdown();
+    renderResidentsFullList();
+    renderAandachtCard();
     modalOverlay.classList.remove("open");
   });
 
@@ -1944,12 +2400,16 @@
     renderResidentManage();
     refreshResidentSelects();
     renderResidentsFullList();
+    renderAandachtCard();
     renderContactsDashboard();
     renderContactManage();
     renderContactsTab();
     renderStadsteamList();
     renderStadsteamManage();
     renderStadsteamListTab();
+    refreshWarningResidentSelect();
+    renderWarningsList();
+    renderBansList();
     applyAllPanelStates();
     renderAgendaToday();
     renderAgendaViewSwitch();
