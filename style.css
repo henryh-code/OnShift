@@ -1170,13 +1170,18 @@
   .splash-arc-bottom{
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
+    stroke-linecap: butt;
   }
 
   .splash-arc-top{
+    stroke: #9b8868;
+    stroke-width: 15;
     animation: splashArcDraw 0.35s linear 0.95s both;
   }
 
   .splash-arc-bottom{
+    stroke: #e9be94;
+    stroke-width: 17;
     animation: splashArcDraw 0.35s linear 1.25s both;
   }
 
@@ -1194,8 +1199,8 @@
     100%{ opacity: 1; }
   }
 
-   @keyframes splashKnobIn{
-    0%{ transform: translateX(200px); }
+     @keyframes splashKnobIn{
+    0%{ transform: translateX(170px); }
     100%{ transform: translateX(0); }
   }
 
