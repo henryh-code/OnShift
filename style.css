@@ -1192,8 +1192,8 @@
     100%{ opacity: 1; }
   }
 
-  @keyframes splashKnobIn{
-    0%{ transform: translateX(-160px); }
+   @keyframes splashKnobIn{
+    0%{ transform: translateX(200px); }
     100%{ transform: translateX(0); }
   }
 
