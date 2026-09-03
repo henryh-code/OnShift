@@ -47,9 +47,23 @@
     }
     sessionStorage.setItem("onshift_splash_shown", "1");
 
-    setTimeout(function(){ overlay.classList.add("splash-fade-out"); }, 2100);
-    overlay.addEventListener("transitionend", function(){ overlay.remove(); });
-    setTimeout(function(){ if (overlay && overlay.parentNode) overlay.remove(); }, 2700);
+    // Volledige logo-animatie (track + knop + S) is klaar bij ~2.0s.
+    // Daarna nog een rustige pauze voordat we faden.
+    var SPLASH_HOLD_MS = 2500;
+    var SPLASH_FADE_MS = 400;
+
+    setTimeout(function(){
+      overlay.classList.add("splash-fade-out");
+    }, SPLASH_HOLD_MS);
+
+    overlay.addEventListener("transitionend", function(){
+      if (overlay.parentNode) overlay.remove();
+    }, { once: true });
+
+    // Vangnet, mocht transitionend niet vuren
+    setTimeout(function(){
+      if (overlay.parentNode) overlay.remove();
+    }, SPLASH_HOLD_MS + SPLASH_FADE_MS + 300);
   })();
 </script>
 
