@@ -637,6 +637,8 @@
   }
 
   .resident-full-arrow{ color: var(--text-faint); font-size: 15px; flex-shrink: 0; }
+  .resident-full-row-expanded{ background: var(--bg-raised); }
+  .resident-full-expanded-wrap{ list-style: none; padding: 6px 4px 12px; }
 
   /* ---------- Status-indicator (3-staps, alleen stip, klik + hover-popover) ---------- */
   .status-indicator-wrap{ position: relative; display: inline-flex; flex-shrink: 0; }
