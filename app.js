@@ -648,6 +648,18 @@ function openZorgNedLink(url){
     return wrap;
   }
 
+   function buildResidentDetailCard(resident){
+    var card = document.createElement("div");
+    card.className = "resident-detail-card " + STATUS_META[resident.status].cls;
+
+    // ---- Kop: naam, kamer, kluis, aandacht, vorige/volgende ----
+    // >>> Alles wat voorheen tussen "var card = ..." en
+    // "residentDetailWrap.appendChild(card);" stond, blijft hier ongewijzigd staan
+    // (head, nameWrap, note-input, aandacht-toggle, etc.) <<<
+
+    return card;
+  }
+
   function renderResidentDetail(){
     residentDetailWrap.innerHTML = "";
     var resident = getResidentById(state.dashboardSelectedResidentId);
@@ -660,8 +672,8 @@ function openZorgNedLink(url){
       return;
     }
 
-    var card = document.createElement("div");
-    card.className = "resident-detail-card " + STATUS_META[resident.status].cls;
+    residentDetailWrap.appendChild(buildResidentDetailCard(resident));
+  }
 
     // ---- Kop: naam, kamer, kluis, aandacht, vorige/volgende ----
     var head = document.createElement("div");
@@ -1069,6 +1081,7 @@ function openZorgNedLink(url){
   var residentStatusFiltersEl = document.getElementById("residentStatusFilters");
   var residentStatusFilterBtns = residentStatusFiltersEl.querySelectorAll(".filter-pill");
   var residentStatusFilter = "alle";
+  var expandedResidentId = null;
 
   function filteredResidentsForFullList(){
     var list = sortedResidents();
@@ -1093,7 +1106,7 @@ function openZorgNedLink(url){
       li.className = "resident-full-row";
       li.setAttribute("tabindex", "0");
       li.setAttribute("role", "button");
-      li.setAttribute("aria-label", "Open " + resident.name + " op het Dashboard");
+      li.setAttribute("aria-label", "Bewoner " + resident.name + " in-/uitklappen");
 
       li.appendChild(buildStatusIndicator(resident));
 
@@ -1157,30 +1170,41 @@ function openZorgNedLink(url){
 
       li.appendChild(main);
 
+       var isExpanded = expandedResidentId === resident.id;
+      li.classList.toggle("resident-full-row-expanded", isExpanded);
+
       var arrow = document.createElement("span");
       arrow.className = "resident-full-arrow";
-      arrow.textContent = "›";
+      arrow.textContent = isExpanded ? "⌄" : "›";
       li.appendChild(arrow);
-
-      function openOnDashboard(){
-        selectResident(resident.id);
-        activateTab("dashboard");
-      }
 
       li.addEventListener("click", function(e){
         if(e.target.closest(".status-indicator-wrap") || e.target.closest(".warning-count-badge")) return;
-        openOnDashboard();
+        toggleResidentExpanded(resident.id);
       });
       li.addEventListener("keydown", function(e){
         if(e.target.closest(".status-indicator-wrap") || e.target.closest(".warning-count-badge")) return;
         if(e.key === "Enter" || e.key === " "){
           e.preventDefault();
-          openOnDashboard();
+          toggleResidentExpanded(resident.id);
         }
       });
 
       residentsFullList.appendChild(li);
+
+      if(isExpanded){
+        var expandedLi = document.createElement("li");
+        expandedLi.className = "resident-full-expanded-wrap";
+        expandedLi.appendChild(buildResidentDetailCard(resident));
+        residentsFullList.appendChild(expandedLi);
+      }
     });
+  }
+
+  function toggleResidentExpanded(id){
+    expandedResidentId = (expandedResidentId === id) ? null : id;
+    if(expandedResidentId) selectResident(expandedResidentId);
+    renderResidentsFullList();
   }
 
   residentStatusFilterBtns.forEach(function(btn){
