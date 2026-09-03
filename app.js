@@ -642,23 +642,10 @@ function openZorgNedLink(url){
     return wrap;
   }
 
-   function buildResidentDetailCard(resident){
+  function buildResidentDetailCard(resident){
     var card = document.createElement("div");
     card.className = "resident-detail-card " + STATUS_META[resident.status].cls;
 
-    // ---- Kop: naam, kamer, kluis, aandacht, vorige/volgende ----
-    // >>> Alles wat voorheen tussen "var card = ..." en
-    // "residentDetailWrap.appendChild(card);" stond, blijft hier ongewijzigd staan
-    // (head, nameWrap, note-input, aandacht-toggle, etc.) <<<
-
-    return card;
-  }
-
-    function buildResidentDetailCard(resident){
-    var card = document.createElement("div");
-    card.className = "resident-detail-card " + STATUS_META[resident.status].cls;
-
-    // ---- Kop: naam, kamer, kluis, aandacht, vorige/volgende ----
     var head = document.createElement("div");
     head.className = "resident-detail-head";
 
@@ -698,7 +685,12 @@ function openZorgNedLink(url){
       var zorgnedLink = document.createElement("button");
       zorgnedLink.type = "button";
       zorgnedLink.className = "zorgned-badge";
-      zorgnedLink.textContent = "ZorgNed ↗";
+      var zorgnedIcon = document.createElement("img");
+      zorgnedIcon.src = "zorgned-icon.png";
+      zorgnedIcon.alt = "";
+      zorgnedIcon.className = "zorgned-badge-icon";
+      zorgnedLink.appendChild(zorgnedIcon);
+      zorgnedLink.appendChild(document.createTextNode("ZorgNed ↗"));
       zorgnedLink.setAttribute("aria-label", "Open cliëntdossier in ZorgNed");
       zorgnedLink.addEventListener("click", function(){ openZorgNedLink(zorgnedUrl); });
       nameWrap.appendChild(zorgnedLink);
@@ -729,7 +721,6 @@ function openZorgNedLink(url){
 
     card.appendChild(head);
 
-    // ---- Notitie ----
     var noteInput = document.createElement("input");
     noteInput.type = "text";
     noteInput.className = "resident-note";
@@ -743,7 +734,6 @@ function openZorgNedLink(url){
     });
     card.appendChild(noteInput);
 
-    // ---- Aandachtsdossier toggle ----
     var attentionWrap = document.createElement("div");
     attentionWrap.className = "attention-toggle-wrap";
 
@@ -856,13 +846,19 @@ function openZorgNedLink(url){
 
       li.appendChild(main);
 
-      var openBtn = document.createElement("button");
-      openBtn.type = "button";
-      openBtn.className = "resident-nav-btn";
-      openBtn.setAttribute("aria-label", "Open " + resident.name + " op het Dashboard");
-      openBtn.textContent = "›";
-      openBtn.addEventListener("click", function(){ selectResident(resident.id); });
-      li.appendChild(openBtn);
+      if(resident.clientnr){
+        var zorgnedUrl = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(resident.clientnr) + "&section=1";
+        var zorgnedIconBtn = document.createElement("button");
+        zorgnedIconBtn.type = "button";
+        zorgnedIconBtn.className = "zorgned-icon-btn";
+        zorgnedIconBtn.setAttribute("aria-label", "Open cliëntdossier van " + resident.name + " in ZorgNed");
+        var zorgnedIconImg = document.createElement("img");
+        zorgnedIconImg.src = "zorgned-icon.png";
+        zorgnedIconImg.alt = "";
+        zorgnedIconBtn.appendChild(zorgnedIconImg);
+        zorgnedIconBtn.addEventListener("click", function(){ openZorgNedLink(zorgnedUrl); });
+        li.appendChild(zorgnedIconBtn);
+      }
 
       attentionList.appendChild(li);
     });
@@ -1453,11 +1449,14 @@ function openZorgNedLink(url){
   // ======================================================
   // ---------- Stadsteam Backup (dashboard + tabblad) -----
   // ======================================================
-  var stadsteamSearch = document.getElementById("stadsteamSearch");
-  var stadsteamFilters = document.getElementById("stadsteamFilters");
-  var stadsteamList = document.getElementById("stadsteamList");
-  var stadsteamFilterBtns = stadsteamFilters.querySelectorAll(".filter-pill");
-  var stadsteamActiveFilter = "alle";
+  var stadsteamSearchTab = document.getElementById("stadsteamSearchTab");
+  var stadsteamFiltersTab = document.getElementById("stadsteamFiltersTab");
+  var stadsteamListTab = document.getElementById("stadsteamListTab");
+  var stadsteamFilterBtnsTab = stadsteamFiltersTab.querySelectorAll(".filter-pill");
+  var stadsteamActiveFilterTab = "alle";
+
+  var clearStadsteamSearchBtn = document.getElementById("clearStadsteamSearch");
+  var clearStadsteamSearchTabBtn = document.getElementById("clearStadsteamSearchTab");
 
   var stadsteamSearchTab = document.getElementById("stadsteamSearchTab");
   var stadsteamFiltersTab = document.getElementById("stadsteamFiltersTab");
@@ -1546,7 +1545,23 @@ function openZorgNedLink(url){
     renderStadsteamListInto(stadsteamListTab, stadsteamSearchTab.value, stadsteamActiveFilterTab);
   }
 
-  stadsteamSearch.addEventListener("input", renderStadsteamList);
+  function updateStadsteamClearVisibility(){
+    clearStadsteamSearchBtn.classList.toggle("visible", stadsteamSearch.value.length > 0);
+  }
+  function updateStadsteamClearVisibilityTab(){
+    clearStadsteamSearchTabBtn.classList.toggle("visible", stadsteamSearchTab.value.length > 0);
+  }
+
+  stadsteamSearch.addEventListener("input", function(){
+    updateStadsteamClearVisibility();
+    renderStadsteamList();
+  });
+  clearStadsteamSearchBtn.addEventListener("click", function(){
+    stadsteamSearch.value = "";
+    updateStadsteamClearVisibility();
+    renderStadsteamList();
+    stadsteamSearch.focus();
+  });
 
   stadsteamFilterBtns.forEach(function(btn){
     btn.addEventListener("click", function(){
@@ -1556,7 +1571,16 @@ function openZorgNedLink(url){
     });
   });
 
-  stadsteamSearchTab.addEventListener("input", renderStadsteamListTab);
+  stadsteamSearchTab.addEventListener("input", function(){
+    updateStadsteamClearVisibilityTab();
+    renderStadsteamListTab();
+  });
+  clearStadsteamSearchTabBtn.addEventListener("click", function(){
+    stadsteamSearchTab.value = "";
+    updateStadsteamClearVisibilityTab();
+    renderStadsteamListTab();
+    stadsteamSearchTab.focus();
+  });
 
   stadsteamFilterBtnsTab.forEach(function(btn){
     btn.addEventListener("click", function(){
@@ -1923,12 +1947,17 @@ function openZorgNedLink(url){
       nameEl.textContent = ban.name;
       top.appendChild(nameEl);
 
-            if(ban.clientnr){
+      if(ban.clientnr){
         var zorgnedUrl = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(ban.clientnr) + "&section=1";
         var zorgnedLink = document.createElement("button");
         zorgnedLink.type = "button";
         zorgnedLink.className = "zorgned-badge";
-        zorgnedLink.textContent = "ZorgNed ↗";
+        var zorgnedIcon = document.createElement("img");
+        zorgnedIcon.src = "zorgned-icon.png";
+        zorgnedIcon.alt = "";
+        zorgnedIcon.className = "zorgned-badge-icon";
+        zorgnedLink.appendChild(zorgnedIcon);
+        zorgnedLink.appendChild(document.createTextNode("ZorgNed ↗"));
         zorgnedLink.addEventListener("click", function(){ openZorgNedLink(zorgnedUrl); });
         top.appendChild(zorgnedLink);
       }
@@ -2235,7 +2264,6 @@ function openZorgNedLink(url){
   var dayAgendaList = document.getElementById("dayAgendaList");
   var dayPrevBtn = document.getElementById("dayPrevBtn");
   var dayNextBtn = document.getElementById("dayNextBtn");
-  var backToMonthBtn = document.getElementById("backToMonthBtn");
   var newDayEventHour = document.getElementById("newDayEventHour");
   var newDayEventMinute = document.getElementById("newDayEventMinute");
   var newDayEventTitle = document.getElementById("newDayEventTitle");
@@ -2308,16 +2336,6 @@ function openZorgNedLink(url){
     state.agendaSelectedDate = shiftDateISO(state.agendaSelectedDate, 1);
     saveState();
     renderDayView();
-  });
-
-  backToMonthBtn.addEventListener("click", function(){
-    state.agendaView = "month";
-    var parts = state.agendaSelectedDate.split("-");
-    state.calYear = parseInt(parts[0], 10);
-    state.calMonth = parseInt(parts[1], 10) - 1;
-    saveState();
-    renderAgendaViewSwitch();
-    renderMonthView();
   });
 
   // ======================================================

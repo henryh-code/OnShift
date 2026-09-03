@@ -229,7 +229,10 @@
         <span class="card-chevron">▾</span>
       </div>
       <div class="card-body" id="panelBody-stadsteam">
-        <input type="text" id="stadsteamSearch" class="af-title" placeholder="Zoek collega, team of e-mail..." autocomplete="off" style="margin-bottom:9px;">
+        <div class="stadsteam-search-wrap">
+          <input type="text" id="stadsteamSearch" class="af-title" placeholder="Zoek collega, team of e-mail..." autocomplete="off">
+          <button type="button" id="clearStadsteamSearch" class="search-clear-btn" aria-label="Zoekopdracht wissen">✕</button>
+        </div>
         <div class="filter-pills" id="stadsteamFilters">
           <button type="button" class="filter-pill active" data-team="alle">Alle</button>
           <button type="button" class="filter-pill" data-team="volwassenen">Volwassenen</button>
@@ -277,7 +280,6 @@
             <div class="day-label" id="dayLabel"></div>
             <button class="cal-nav-btn" id="dayNextBtn" type="button" aria-label="Volgende dag">›</button>
           </div>
-          <button class="back-to-month" id="backToMonthBtn" type="button">← Terug naar maand</button>
         </div>
         <div class="day-agenda-list" id="dayAgendaList"></div>
         <div class="agenda-form">
@@ -324,7 +326,7 @@
       <ul class="resident-full-list" id="residentsFullList"></ul>
     </section>
 
-    <footer class="hint">Tik op de statusstip om te wisselen, of op een bewoner om die op het Dashboard te openen.</footer>
+    <footer class="hint">Tik op de statusstip om te wisselen, of op een bewoner om de gegevens te bekijken.</footer>
   </div>
 
   <!-- ===================== SANCTIES ===================== -->
@@ -390,7 +392,10 @@
       <div class="card-head">
         <div class="card-title"><span class="dot"></span>Stadsteam Backup</div>
       </div>
-      <input type="text" id="stadsteamSearchTab" class="af-title" placeholder="Zoek collega, team of e-mail..." autocomplete="off" style="margin-bottom:9px;">
+      <div class="stadsteam-search-wrap">
+        <input type="text" id="stadsteamSearchTab" class="af-title" placeholder="Zoek collega, team of e-mail..." autocomplete="off">
+        <button type="button" id="clearStadsteamSearchTab" class="search-clear-btn" aria-label="Zoekopdracht wissen">✕</button>
+      </div>
       <div class="filter-pills" id="stadsteamFiltersTab">
         <button type="button" class="filter-pill active" data-team="alle">Alle</button>
         <button type="button" class="filter-pill" data-team="volwassenen">Volwassenen</button>

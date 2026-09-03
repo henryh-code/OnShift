@@ -559,7 +559,9 @@
    .zorgned-badge{
     font: inherit;
     line-height: normal;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     -webkit-appearance: none;
     appearance: none;
     margin: 0;
@@ -574,6 +576,9 @@
     cursor: pointer;
     transition: filter .15s ease;
   }
+
+  .zorgned-badge-icon{ width: 12px; height: 12px; flex-shrink: 0; display: block; }
+
 
   .zorgned-badge:hover{ filter: brightness(1.15); text-decoration: underline; }
 
@@ -594,6 +599,22 @@
   }
 
   .resident-nav-btn:hover{ color: var(--text); border-color: var(--text-faint); }
+  .zorgned-icon-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .zorgned-icon-btn img{ width: 15px; height: 15px; display: block; }
+  .zorgned-icon-btn:hover{ border-color: var(--accent); background: var(--accent-soft); }
 
   /* ---------- Bewoners: volledige lijst (tabblad Bewoners) ---------- */
   .resident-full-list{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -809,6 +830,21 @@
 
   .filter-pill:hover{ border-color: var(--text-faint); color: var(--text); }
   .filter-pill.active{ background: var(--accent); color: #10201a; border-color: var(--accent); font-weight: 600; }
+  .stadsteam-search-wrap{ position: relative; margin-bottom: 9px; }
+  .stadsteam-search-wrap .af-title{ padding-right: 32px; margin-bottom: 0; }
+
+  #stadsteamFilters .filter-pill.active[data-team="volwassenen"],
+  #stadsteamFiltersTab .filter-pill.active[data-team="volwassenen"]{
+    background: var(--accent); border-color: var(--accent); color: #10201a;
+  }
+  #stadsteamFilters .filter-pill.active[data-team="jongvolwassenen"],
+  #stadsteamFiltersTab .filter-pill.active[data-team="jongvolwassenen"]{
+    background: var(--violet); border-color: var(--violet); color: #1c1830;
+  }
+  #stadsteamFilters .filter-pill.active[data-team="veldwerkers"],
+  #stadsteamFiltersTab .filter-pill.active[data-team="veldwerkers"]{
+    background: var(--warn); border-color: var(--warn); color: #2a1a0e;
+  }
 
   .stadsteam-list{
     list-style: none;
@@ -955,13 +991,10 @@
   .cal-dot.multi{ min-width: 14px; height: 13px; padding: 0 3px; font-size: 9.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 
   /* ---------- Kalender dagweergave ---------- */
-  .day-toolbar{ display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 10px; flex-wrap: wrap; }
+  .day-toolbar{ display: flex; align-items: center; justify-content: center; gap: 8px; margin: 12px 0 10px; flex-wrap: wrap; }
   .day-label-wrap{ display: flex; align-items: center; gap: 6px; }
   .day-label{ font-size: 13.5px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
   .day-label.today-label{ color: var(--accent-text); }
-
-  .back-to-month{ font-size: 12px; color: var(--accent-text); background: none; border: none; cursor: pointer; font-family: inherit; padding: 4px 0; }
-  .back-to-month:hover{ text-decoration: underline; }
 
   .day-agenda-list{ display: flex; flex-direction: column; gap: 1px; margin-bottom: 4px; }
   .day-agenda-item{ display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--border-soft); flex-wrap: wrap; }
