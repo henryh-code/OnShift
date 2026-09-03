@@ -1446,23 +1446,22 @@ function openZorgNedLink(url){
     });
   });
 
-  // ======================================================
+   // ======================================================
   // ---------- Stadsteam Backup (dashboard + tabblad) -----
   // ======================================================
-  var stadsteamSearchTab = document.getElementById("stadsteamSearchTab");
-  var stadsteamFiltersTab = document.getElementById("stadsteamFiltersTab");
-  var stadsteamListTab = document.getElementById("stadsteamListTab");
-  var stadsteamFilterBtnsTab = stadsteamFiltersTab.querySelectorAll(".filter-pill");
-  var stadsteamActiveFilterTab = "alle";
-
+  var stadsteamSearch = document.getElementById("stadsteamSearch");
+  var stadsteamFilters = document.getElementById("stadsteamFilters");
+  var stadsteamList = document.getElementById("stadsteamList");
+  var stadsteamFilterBtns = stadsteamFilters.querySelectorAll(".filter-pill");
+  var stadsteamActiveFilter = "alle";
   var clearStadsteamSearchBtn = document.getElementById("clearStadsteamSearch");
-  var clearStadsteamSearchTabBtn = document.getElementById("clearStadsteamSearchTab");
 
   var stadsteamSearchTab = document.getElementById("stadsteamSearchTab");
   var stadsteamFiltersTab = document.getElementById("stadsteamFiltersTab");
   var stadsteamListTab = document.getElementById("stadsteamListTab");
   var stadsteamFilterBtnsTab = stadsteamFiltersTab.querySelectorAll(".filter-pill");
   var stadsteamActiveFilterTab = "alle";
+  var clearStadsteamSearchTabBtn = document.getElementById("clearStadsteamSearchTab");
 
   function filteredStadsteamBy(query, activeFilter){
     var q = (query || "").trim().toLowerCase();
