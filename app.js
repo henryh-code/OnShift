@@ -4,6 +4,17 @@
    agenda, taken, noodcontacten, stadsteams en sancties.
    =========================================================== */
 
+window.addEventListener("error", function(e){
+  var msg = "JS-fout: " + e.message +
+    "\nBestand: " + (e.filename || "onbekend") + ":" + e.lineno + ":" + e.colno +
+    (e.error && e.error.stack ? "\n\n" + e.error.stack : "");
+  var box = document.createElement("div");
+  box.style.cssText = "position:fixed;inset:0;z-index:99999;background:#7a1f1f;color:#fff;" +
+    "font:12px/1.4 monospace;padding:16px;overflow:auto;white-space:pre-wrap;";
+  box.textContent = msg;
+  document.body.appendChild(box);
+});
+
 (function(){
   "use strict";
 
