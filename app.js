@@ -654,20 +654,9 @@ function openZorgNedLink(url){
     return card;
   }
 
-  function renderResidentDetail(){
-    residentDetailWrap.innerHTML = "";
-    var resident = getResidentById(state.dashboardSelectedResidentId);
-
-    if(!resident){
-      var empty = document.createElement("div");
-      empty.className = "resident-detail-empty";
-      empty.textContent = "Zoek of kies hierboven een bewoner om de status en notitie te bekijken of aan te passen.";
-      residentDetailWrap.appendChild(empty);
-      return;
-    }
-
-    residentDetailWrap.appendChild(buildResidentDetailCard(resident));
-  }
+    function buildResidentDetailCard(resident){
+    var card = document.createElement("div");
+    card.className = "resident-detail-card " + STATUS_META[resident.status].cls;
 
     // ---- Kop: naam, kamer, kluis, aandacht, vorige/volgende ----
     var head = document.createElement("div");
@@ -704,7 +693,7 @@ function openZorgNedLink(url){
       nameWrap.appendChild(attentionBadge);
     }
 
-        if(resident.clientnr){
+    if(resident.clientnr){
       var zorgnedUrl = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(resident.clientnr) + "&section=1";
       var zorgnedLink = document.createElement("button");
       zorgnedLink.type = "button";
@@ -800,7 +789,22 @@ function openZorgNedLink(url){
     attentionWrap.appendChild(attentionNoteInput);
     card.appendChild(attentionWrap);
 
-    residentDetailWrap.appendChild(card);
+    return card;
+  }
+
+  function renderResidentDetail(){
+    residentDetailWrap.innerHTML = "";
+    var resident = getResidentById(state.dashboardSelectedResidentId);
+
+    if(!resident){
+      var empty = document.createElement("div");
+      empty.className = "resident-detail-empty";
+      empty.textContent = "Zoek of kies hierboven een bewoner om de status en notitie te bekijken of aan te passen.";
+      residentDetailWrap.appendChild(empty);
+      return;
+    }
+
+    residentDetailWrap.appendChild(buildResidentDetailCard(resident));
   }
 
   function navigateResident(delta){
