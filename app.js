@@ -21,6 +21,14 @@ window.addEventListener("error", function(e){
   var STORAGE_KEY = "wb_diensten_dashboard";
   var LEGACY_KEYS = ["wb_diensten_dashboard_v4", "wb_diensten_dashboard_v3", "wb_diensten_dashboard_v2", "wb_diensten_dashboard_v1"];
 
+  // ---------- Beveiliging: versleutelde opslag (AES-GCM + PBKDF2) ----------
+  var VAULT_DB_NAME = "onshift_vault_db";
+  var VAULT_STORE = "vault";
+  var VAULT_RECORD_KEY = "state";
+  var SALT_LS_KEY = "onshift_vault_salt";
+  var INIT_FLAG_LS_KEY = "onshift_vault_initialized";
+  var PBKDF2_ITERATIONS = 310000;
+
   var STATUS_ORDER = ["unseen", "seen", "absent"];
   var STATUS_META = {
     unseen: { label: "Nog niet gezien", cls: "st-unseen" },
@@ -75,6 +83,7 @@ window.addEventListener("error", function(e){
     beheerBewoners: true,
     beheerContacten: true,
     beheerStadsteam: false,
+    beheerBeveiliging: true,
     beheerData: false,
     sanctiesWarnings: true,
     sanctiesBans: true
@@ -124,7 +133,8 @@ function openZorgNedLink(url){
       calYear: parseInt(parts[0], 10),
       calMonth: parseInt(parts[1], 10) - 1,
       dashboardSort: "naam",
-      dashboardSelectedResidentId: null
+      dashboardSelectedResidentId: null,
+      autoLockMinutes: 5
     };
   }
 
@@ -236,7 +246,8 @@ function openZorgNedLink(url){
       calYear: typeof parsed.calYear === "number" ? parsed.calYear : base.calYear,
       calMonth: typeof parsed.calMonth === "number" ? parsed.calMonth : base.calMonth,
       dashboardSort: (parsed.dashboardSort === "kamer" ? "kamer" : "naam"),
-      dashboardSelectedResidentId: typeof parsed.dashboardSelectedResidentId === "string" ? parsed.dashboardSelectedResidentId : null
+      dashboardSelectedResidentId: typeof parsed.dashboardSelectedResidentId === "string" ? parsed.dashboardSelectedResidentId : null,
+      autoLockMinutes: [2, 5, 10].indexOf(parsed.autoLockMinutes) !== -1 ? parsed.autoLockMinutes : base.autoLockMinutes
     };
   }
 
@@ -252,24 +263,113 @@ function openZorgNedLink(url){
     return null;
   }
 
-  function loadState(){
+  // Alleen gebruikt tijdens de eenmalige migratie van oude, onversleutelde
+  // localStorage-data naar de versleutelde IndexedDB-vault (zie boot-logica
+  // onderaan dit bestand). Wordt daarna niet meer aangeroepen.
+  function loadLegacyPlaintextState(){
     try{
       var raw = readRawFromAnyKey();
-      if(!raw) return defaultState();
+      if(!raw) return null;
       return normalizeLoadedData(JSON.parse(raw));
     }catch(e){
-      return defaultState();
+      return null;
     }
   }
 
-  function saveState(){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      flashSaveHint();
-    }catch(e){ /* localStorage niet beschikbaar - stil negeren */ }
+  // ---------- Crypto-helpers (Web Crypto API: PBKDF2 + AES-GCM) ----------
+  function bufToB64(buf){
+    var bytes = new Uint8Array(buf);
+    var binary = "";
+    for(var i = 0; i < bytes.byteLength; i++){ binary += String.fromCharCode(bytes[i]); }
+    return btoa(binary);
   }
 
-  var state = loadState();
+  function b64ToBuf(b64){
+    var binary = atob(b64);
+    var bytes = new Uint8Array(binary.length);
+    for(var i = 0; i < binary.length; i++){ bytes[i] = binary.charCodeAt(i); }
+    return bytes;
+  }
+
+  function deriveKey(pin, saltBytes){
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey("raw", enc.encode(pin), "PBKDF2", false, ["deriveKey"]).then(function(keyMaterial){
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: saltBytes, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    });
+  }
+
+  function decryptBlob(key, ivB64, ctB64){
+    var iv = b64ToBuf(ivB64);
+    var ct = b64ToBuf(ctB64);
+    return crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, ct).then(function(plainBuf){
+      var dec = new TextDecoder();
+      return JSON.parse(dec.decode(plainBuf));
+    });
+  }
+
+  // ---------- IndexedDB-vault (versleutelde blob, één record) ----------
+  function openVaultDB(){
+    return new Promise(function(resolve, reject){
+      var req = indexedDB.open(VAULT_DB_NAME, 1);
+      req.onupgradeneeded = function(){
+        var db = req.result;
+        if(!db.objectStoreNames.contains(VAULT_STORE)) db.createObjectStore(VAULT_STORE);
+      };
+      req.onsuccess = function(){ resolve(req.result); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+
+  function vaultGet(){
+    return openVaultDB().then(function(db){
+      return new Promise(function(resolve, reject){
+        var tx = db.transaction(VAULT_STORE, "readonly");
+        var req = tx.objectStore(VAULT_STORE).get(VAULT_RECORD_KEY);
+        req.onsuccess = function(){ resolve(req.result || null); };
+        req.onerror = function(){ reject(req.error); };
+      });
+    });
+  }
+
+  function vaultPut(record){
+    return openVaultDB().then(function(db){
+      return new Promise(function(resolve, reject){
+        var tx = db.transaction(VAULT_STORE, "readwrite");
+        var req = tx.objectStore(VAULT_STORE).put(record, VAULT_RECORD_KEY);
+        req.onsuccess = function(){ resolve(); };
+        req.onerror = function(){ reject(req.error); };
+      });
+    });
+  }
+
+  // ---------- Sessiesleutel (alleen in geheugen, nooit opgeslagen) ----------
+  var cryptoKey = null;   // niet-exporteerbare AES-GCM CryptoKey, alleen tijdens ontgrendelde sessie
+  var currentPin = null;  // huidige pincode in geheugen (nodig voor export-standaardwachtwoord en pincode wijzigen)
+  var state = null;       // pas gevuld na succesvolle setup/ontgrendeling
+
+  function persistEncrypted(){
+    if(!cryptoKey || !state) return Promise.resolve();
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var enc = new TextEncoder();
+    var data = enc.encode(JSON.stringify(state));
+    return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, cryptoKey, data).then(function(ctBuf){
+      return vaultPut({ iv: bufToB64(iv), ciphertext: bufToB64(ctBuf) });
+    });
+  }
+
+  function saveState(){
+    persistEncrypted().then(function(){
+      flashSaveHint();
+    }).catch(function(e){
+      console.warn("Opslaan (versleuteld) mislukt:", e);
+    });
+  }
 
   // ---------- Save hint ----------
   var saveHintEl = document.getElementById("saveHint");
@@ -2338,11 +2438,61 @@ function openZorgNedLink(url){
   });
 
   // ======================================================
+  // ---------- Beveiliging: auto-lock & pincode wijzigen --
+  // ======================================================
+  var autoLockSelect = document.getElementById("autoLockSelect");
+  var lockNowBtnBeheer = document.getElementById("lockNowBtn");
+  var lockHeaderBtn = document.getElementById("lockHeaderBtn");
+  var changePinCurrent = document.getElementById("changePinCurrent");
+  var changePinNew1 = document.getElementById("changePinNew1");
+  var changePinNew2 = document.getElementById("changePinNew2");
+  var changePinBtn = document.getElementById("changePinBtn");
+  var changePinMsg = document.getElementById("changePinMsg");
+
+  autoLockSelect.addEventListener("change", function(){
+    state.autoLockMinutes = parseInt(autoLockSelect.value, 10) || 5;
+    saveState();
+    resetInactivityTimer();
+  });
+
+  lockNowBtnBeheer.addEventListener("click", function(){ if(cryptoKey) lockNow(); });
+  lockHeaderBtn.addEventListener("click", function(){ if(cryptoKey) lockNow(); });
+
+  changePinBtn.addEventListener("click", function(){
+    var cur = changePinCurrent.value;
+    var n1 = changePinNew1.value;
+    var n2 = changePinNew2.value;
+
+    if(cur !== currentPin){ changePinMsg.textContent = "Huidige pincode is onjuist."; return; }
+    if(n1.length < 4){ changePinMsg.textContent = "Nieuwe pincode moet minimaal 4 tekens zijn."; return; }
+    if(n1 !== n2){ changePinMsg.textContent = "Nieuwe pincodes komen niet overeen."; return; }
+
+    var newSalt = crypto.getRandomValues(new Uint8Array(16));
+    deriveKey(n1, newSalt).then(function(newKey){
+      cryptoKey = newKey;
+      currentPin = n1;
+      try{ localStorage.setItem(SALT_LS_KEY, bufToB64(newSalt)); }catch(e){}
+      return persistEncrypted();
+    }).then(function(){
+      changePinCurrent.value = "";
+      changePinNew1.value = "";
+      changePinNew2.value = "";
+      changePinMsg.textContent = "Pincode gewijzigd.";
+      setTimeout(function(){ changePinMsg.textContent = ""; }, 3200);
+    }).catch(function(){
+      changePinMsg.textContent = "Wijzigen mislukt — probeer opnieuw.";
+    });
+  });
+
+  // ======================================================
   // ---------- Gegevensbeheer & back-up -------------------
   // ======================================================
   var exportDataBtn = document.getElementById("exportDataBtn");
+  var exportPasswordInput = document.getElementById("exportPasswordInput");
   var importToggleBtn = document.getElementById("importToggleBtn");
   var importPanel = document.getElementById("importPanel");
+  var importFileInput = document.getElementById("importFileInput");
+  var importPasswordInput = document.getElementById("importPasswordInput");
   var importTextarea = document.getElementById("importTextarea");
   var importConfirmBtn = document.getElementById("importConfirmBtn");
   var importCancelBtn = document.getElementById("importCancelBtn");
@@ -2357,68 +2507,118 @@ function openZorgNedLink(url){
     }
   }
 
-  function copyToClipboard(text){
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise(function(resolve, reject){
-      try{
-        var ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        var ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        if(ok) resolve(); else reject(new Error("copy failed"));
-      }catch(e){ reject(e); }
-    });
+  function downloadTextFile(filename, text){
+    var blob = new Blob([text], { type: "application/octet-stream" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
   }
 
   exportDataBtn.addEventListener("click", function(){
-    var json = JSON.stringify(state, null, 2);
-    copyToClipboard(json).then(function(){
-      showDataMsg("Gekopieerd naar klembord!");
+    var password = exportPasswordInput.value.trim() || currentPin;
+    if(!password){
+      showDataMsg("Geen wachtwoord beschikbaar — vergrendel en ontgrendel de app opnieuw.");
+      return;
+    }
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    deriveKey(password, salt).then(function(key){
+      var enc = new TextEncoder();
+      var data = enc.encode(JSON.stringify(state));
+      return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, data);
+    }).then(function(ctBuf){
+      var payload = {
+        v: 1,
+        app: "onshift",
+        exportedAt: new Date().toISOString(),
+        salt: bufToB64(salt),
+        iv: bufToB64(iv),
+        ciphertext: bufToB64(ctBuf)
+      };
+      var filename = "onshift-backup-" + todayISO() + ".enc";
+      downloadTextFile(filename, JSON.stringify(payload));
+      exportPasswordInput.value = "";
+      showDataMsg("Versleutelde back-up gedownload (" + filename + ").");
     }).catch(function(){
-      importPanel.style.display = "block";
-      importTextarea.value = json;
-      importTextarea.focus();
-      importTextarea.select();
-      showDataMsg("Automatisch kopiëren niet gelukt — selecteer en kopieer de tekst hieronder handmatig.", true);
+      showDataMsg("Exporteren mislukt — probeer opnieuw.");
     });
   });
 
   importToggleBtn.addEventListener("click", function(){
     importPanel.style.display = "block";
     importTextarea.value = "";
-    importTextarea.focus();
+    importFileInput.value = "";
+    importPasswordInput.value = "";
     showDataMsg("");
   });
 
   importCancelBtn.addEventListener("click", function(){
     importPanel.style.display = "none";
     importTextarea.value = "";
+    importFileInput.value = "";
+    importPasswordInput.value = "";
     showDataMsg("");
   });
 
-  importConfirmBtn.addEventListener("click", function(){
-    var raw = importTextarea.value.trim();
-    if(!raw){ showDataMsg("Plak eerst de geëxporteerde JSON-tekst hierboven."); return; }
-    var parsed;
-    try{
-      parsed = JSON.parse(raw);
-    }catch(e){
-      showDataMsg("Ongeldige JSON — controleer de geplakte tekst.");
-      return;
-    }
-    state = normalizeLoadedData(parsed);
+  function readFileAsText(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(){ resolve(reader.result); };
+      reader.onerror = function(){ reject(reader.error); };
+      reader.readAsText(file);
+    });
+  }
+
+  function finishImport(parsedState, note){
+    state = normalizeLoadedData(parsedState);
     saveState();
     renderAll();
     importPanel.style.display = "none";
     importTextarea.value = "";
-    showDataMsg("Gegevens hersteld.");
+    importFileInput.value = "";
+    importPasswordInput.value = "";
+    showDataMsg(note || "Gegevens hersteld.");
+  }
+
+  importConfirmBtn.addEventListener("click", function(){
+    var filePromise = (importFileInput.files && importFileInput.files[0])
+      ? readFileAsText(importFileInput.files[0])
+      : Promise.resolve(importTextarea.value.trim());
+
+    filePromise.then(function(raw){
+      raw = (raw || "").trim();
+      if(!raw){ showDataMsg("Kies een back-upbestand of plak een oude JSON-tekst."); return; }
+
+      var parsed;
+      try{
+        parsed = JSON.parse(raw);
+      }catch(e){
+        showDataMsg("Ongeldig bestand — kon de inhoud niet lezen.");
+        return;
+      }
+
+      if(parsed && parsed.v === 1 && parsed.salt && parsed.iv && parsed.ciphertext){
+        var pw = importPasswordInput.value;
+        if(!pw){ showDataMsg("Voer het wachtwoord van dit back-upbestand in."); return; }
+        var salt = b64ToBuf(parsed.salt);
+        deriveKey(pw, salt).then(function(key){
+          return decryptBlob(key, parsed.iv, parsed.ciphertext);
+        }).then(function(decrypted){
+          finishImport(decrypted, "Versleutelde back-up hersteld.");
+        }).catch(function(){
+          showDataMsg("Wachtwoord onjuist of bestand beschadigd.");
+        });
+      }else{
+        finishImport(parsed, "Oude onversleutelde back-up hersteld.");
+      }
+    }).catch(function(){
+      showDataMsg("Kon het bestand niet lezen.");
+    });
   });
 
   // ---------- Reset ----------
@@ -2455,6 +2655,7 @@ function openZorgNedLink(url){
 
   // ---------- Init / volledige herrender (ook na import) ----------
   function renderAll(){
+    autoLockSelect.value = String(state.autoLockMinutes || 5);
     handoverEl.value = state.handoverNote;
     residentSearch.value = "";
     updateClearButtonVisibility();
@@ -2488,6 +2689,158 @@ function openZorgNedLink(url){
     renderDayView();
   }
 
-  renderAll();
+  // ======================================================
+  // ---------- Vergrendelscherm: setup / ontgrendelen -----
+  // ======================================================
+  var appEl = document.querySelector(".app");
+  var lockOverlay = document.getElementById("lockOverlay");
+  var lockSetupView = document.getElementById("lockSetupView");
+  var lockUnlockView = document.getElementById("lockUnlockView");
+  var setupPin1 = document.getElementById("setupPin1");
+  var setupPin2 = document.getElementById("setupPin2");
+  var setupPinBtn = document.getElementById("setupPinBtn");
+  var setupPinError = document.getElementById("setupPinError");
+  var unlockPin = document.getElementById("unlockPin");
+  var unlockBtn = document.getElementById("unlockBtn");
+  var unlockError = document.getElementById("unlockError");
+
+  var inactivityTimer = null;
+  var ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
+
+  function resetInactivityTimer(){
+    if(!cryptoKey) return;
+    if(inactivityTimer) clearTimeout(inactivityTimer);
+    var minutes = (state && state.autoLockMinutes) ? state.autoLockMinutes : 5;
+    inactivityTimer = setTimeout(function(){ lockNow(); }, minutes * 60 * 1000);
+  }
+
+  ACTIVITY_EVENTS.forEach(function(evt){
+    document.addEventListener(evt, function(){
+      if(cryptoKey) resetInactivityTimer();
+    }, { passive: true });
+  });
+
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible" && cryptoKey) resetInactivityTimer();
+  });
+
+  function setLockUIMode(mode){
+    lockSetupView.style.display = mode === "setup" ? "block" : "none";
+    lockUnlockView.style.display = mode === "unlock" ? "block" : "none";
+    lockOverlay.classList.add("open");
+    appEl.style.display = "none";
+  }
+
+  function openApp(){
+    lockOverlay.classList.remove("open");
+    appEl.style.display = "";
+    renderAll();
+    resetInactivityTimer();
+  }
+
+  function lockNow(){
+    if(inactivityTimer) clearTimeout(inactivityTimer);
+    cryptoKey = null;
+    currentPin = null;
+    state = null;
+    unlockPin.value = "";
+    unlockError.textContent = "";
+    setLockUIMode("unlock");
+    if(typeof unlockPin.focus === "function") unlockPin.focus();
+  }
+
+  function handleSetupSubmit(){
+    var p1 = setupPin1.value;
+    var p2 = setupPin2.value;
+    setupPinError.textContent = "";
+
+    if(p1.length < 4){ setupPinError.textContent = "Gebruik minimaal 4 cijfers/tekens."; return; }
+    if(p1 !== p2){ setupPinError.textContent = "Pincodes komen niet overeen."; return; }
+
+    var initialState = loadLegacyPlaintextState() || defaultState();
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+
+    deriveKey(p1, salt).then(function(key){
+      state = initialState;
+      cryptoKey = key;
+      currentPin = p1;
+      try{ localStorage.setItem(SALT_LS_KEY, bufToB64(salt)); }catch(e){}
+      return persistEncrypted();
+    }).then(function(){
+      // Plaintext-back-up definitief wissen: vanaf nu bestaat de data alleen
+      // nog versleuteld in de IndexedDB-vault.
+      try{
+        localStorage.removeItem(STORAGE_KEY);
+        LEGACY_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+      }catch(e){}
+      try{ localStorage.setItem(INIT_FLAG_LS_KEY, "1"); }catch(e){}
+      setupPin1.value = "";
+      setupPin2.value = "";
+      openApp();
+    }).catch(function(){
+      setupPinError.textContent = "Instellen mislukt — probeer het opnieuw.";
+    });
+  }
+
+  function handleUnlockSubmit(){
+    var pin = unlockPin.value;
+    unlockError.textContent = "";
+    if(!pin){ unlockError.textContent = "Voer de pincode in."; return; }
+
+    var saltB64 = null;
+    try{ saltB64 = localStorage.getItem(SALT_LS_KEY); }catch(e){}
+    if(!saltB64){
+      unlockError.textContent = "Geen sleutel gevonden op dit toestel. Herstel via een back-upbestand bij Beheer, of neem contact op met de beheerder.";
+      return;
+    }
+
+    var salt = b64ToBuf(saltB64);
+    deriveKey(pin, salt).then(function(key){
+      return vaultGet().then(function(record){
+        if(!record) throw new Error("geen-vault-record");
+        return decryptBlob(key, record.iv, record.ciphertext).then(function(decrypted){
+          state = normalizeLoadedData(decrypted);
+          cryptoKey = key;
+          currentPin = pin;
+          unlockPin.value = "";
+          openApp();
+        });
+      });
+    }).catch(function(e){
+      if(e && e.message === "geen-vault-record"){
+        unlockError.textContent = "Geen versleutelde gegevens gevonden op dit toestel.";
+      }else{
+        unlockError.textContent = "Onjuiste pincode.";
+      }
+      unlockPin.value = "";
+      unlockPin.focus();
+    });
+  }
+
+  setupPinBtn.addEventListener("click", handleSetupSubmit);
+  [setupPin1, setupPin2].forEach(function(el){
+    el.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){ e.preventDefault(); handleSetupSubmit(); }
+    });
+  });
+
+  unlockBtn.addEventListener("click", handleUnlockSubmit);
+  unlockPin.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); handleUnlockSubmit(); }
+  });
+
+  // ---------- Boot: bepaal of setup of ontgrendelen nodig is ----------
+  appEl.style.display = "none";
+  (function boot(){
+    var initFlag = null;
+    try{ initFlag = localStorage.getItem(INIT_FLAG_LS_KEY); }catch(e){}
+    if(!initFlag){
+      setLockUIMode("setup");
+      if(typeof setupPin1.focus === "function") setupPin1.focus();
+    }else{
+      setLockUIMode("unlock");
+      if(typeof unlockPin.focus === "function") unlockPin.focus();
+    }
+  })();
 
 })();

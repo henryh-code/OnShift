@@ -90,6 +90,20 @@
 
   .reset-btn:hover{ background: var(--danger-soft); color: var(--danger); border-color: #5c332e; }
 
+  .lock-header-btn{
+    flex-shrink: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    font-size: 14px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    line-height: 1;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .lock-header-btn:hover{ background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
+
   /* ---------- Tabs ---------- */
   .tabs{
     display: flex;
@@ -237,6 +251,8 @@
   .add-row input[type="time"],
   .add-row input[type="tel"],
   .add-row input[type="email"],
+  .add-row input[type="password"],
+  .add-row input[type="file"],
   .add-row select{
     flex: 1;
     min-width: 110px;
@@ -1163,6 +1179,96 @@
     line-height: 1.4;
   }
 
+  /* ---------- Beveiliging (Beheer-tab) ---------- */
+  .security-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+  }
+  .security-label{ font-size: 13px; color: var(--text-soft); }
+  .security-row select{
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 9px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--bg-raised);
+    color: var(--text);
+    outline: none;
+  }
+  .security-divider{ height: 1px; background: var(--border-soft); margin: 10px 0; }
+
+  /* ---------- Vergrendelscherm (pincode) ---------- */
+  .lock-overlay{
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .lock-overlay.open{ display: flex; }
+
+  .lock-box{
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+  }
+
+  .lock-logo{
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 18px;
+    letter-spacing: -0.01em;
+  }
+
+  .lock-box h3{ margin: 0 0 6px; font-size: 16px; color: var(--text); }
+  .lock-sub{ font-size: 12.5px; color: var(--text-faint); margin: 0 0 16px; line-height: 1.5; }
+
+  .lock-input{
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 12px;
+    font-size: 16px;
+    font-family: inherit;
+    background: var(--bg-raised);
+    color: var(--text);
+    outline: none;
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 0.15em;
+  }
+  .lock-input:focus{ border-color: var(--accent); }
+  .lock-input::placeholder{ letter-spacing: normal; color: var(--text-faint); }
+
+  .lock-btn{
+    width: 100%;
+    background: var(--accent);
+    color: #10201a;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter .15s ease;
+  }
+  .lock-btn:hover{ filter: brightness(1.12); }
+
+  .lock-error{
+    min-height: 16px;
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 10px;
+  }
+
   @media (max-width: 380px){
     .app{ padding: 12px 10px 32px; }
     .cal-month-label{ min-width: 100px; font-size: 12.5px; }
@@ -1216,7 +1322,6 @@
     stroke: #e9be94;
     stroke-width: 20.4;
     animation: splashArcDraw 0.35s linear 1.25s both;
-  }
   }
 
   .splash-title{

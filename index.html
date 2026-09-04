@@ -76,6 +76,7 @@
       <h1>OnShift</h1>
       <div class="sub" id="shiftDate"></div>
     </div>
+    <button class="lock-header-btn" id="lockHeaderBtn" type="button" aria-label="Vergrendel dienst nu" title="Vergrendel dienst nu">🔒</button>
     <button class="reset-btn" id="resetBtn" type="button">Reset voor nieuwe dienst</button>
   </div>
 
@@ -475,6 +476,41 @@
       </div>
     </section>
 
+    <!-- Beveiliging -->
+    <section class="card">
+      <div class="card-head" data-panel="beheerBeveiliging" role="button" tabindex="0" aria-expanded="true">
+        <div class="card-title"><span class="dot"></span>Beveiliging</div>
+        <span class="card-chevron">▾</span>
+      </div>
+      <div class="card-body" id="panelBody-beheerBeveiliging">
+        <div class="card-sub">Alle gegevens staan versleuteld op dit toestel. Zonder pincode is er niets leesbaar.</div>
+
+        <div class="security-row">
+          <label for="autoLockSelect" class="security-label">Automatisch vergrendelen na</label>
+          <select id="autoLockSelect">
+            <option value="2">2 minuten</option>
+            <option value="5">5 minuten</option>
+            <option value="10">10 minuten</option>
+          </select>
+        </div>
+
+        <div class="security-row">
+          <button id="lockNowBtn" type="button" class="secondary">Vergrendel dienst nu</button>
+        </div>
+
+        <div class="security-divider"></div>
+
+        <div class="card-sub">Pincode wijzigen</div>
+        <div class="add-row" id="changePinRow" style="border-top:none; padding-top:0; margin-top:0;">
+          <input type="password" inputmode="numeric" id="changePinCurrent" placeholder="Huidige pincode">
+          <input type="password" inputmode="numeric" id="changePinNew1" placeholder="Nieuwe pincode">
+          <input type="password" inputmode="numeric" id="changePinNew2" placeholder="Herhaal nieuwe pincode">
+          <button id="changePinBtn" type="button">Wijzigen</button>
+        </div>
+        <div class="save-hint" id="changePinMsg">&nbsp;</div>
+      </div>
+    </section>
+
     <!-- Gegevensbeheer & back-up -->
     <section class="card">
       <div class="card-head" data-panel="beheerData" role="button" tabindex="0" aria-expanded="false">
@@ -482,14 +518,20 @@
         <span class="card-chevron">▾</span>
       </div>
       <div class="card-body" id="panelBody-beheerData">
-        <div class="card-sub">Exporteer een volledige back-up als JSON, of herstel eerder geëxporteerde gegevens.</div>
-        <div class="add-row" style="border-top:none; padding-top:0; margin-top:0;">
-          <button id="exportDataBtn" type="button">Exporteer gegevens</button>
+        <div class="card-sub">Exporteer een versleutelde back-up (.enc bestand), of herstel een eerder geëxporteerd bestand.</div>
+        <div class="add-row" style="border-top:none; padding-top:0; margin-top:0; flex-wrap:wrap;">
+          <input type="password" inputmode="numeric" id="exportPasswordInput" placeholder="Afwijkend exportwachtwoord (optioneel)" style="min-width:220px;">
+          <button id="exportDataBtn" type="button">Exporteer gegevens (.enc)</button>
           <button id="importToggleBtn" type="button" class="secondary">Importeer gegevens</button>
         </div>
         <div class="save-hint" id="dataMsg">&nbsp;</div>
         <div id="importPanel" style="display:none;">
-          <textarea class="import-textarea" id="importTextarea" placeholder="Plak hier de eerder geëxporteerde JSON..."></textarea>
+          <div class="add-row" style="border-top:none; padding-top:0; margin-top:0; flex-wrap:wrap;">
+            <input type="file" id="importFileInput" accept=".enc,.json,text/plain,application/json">
+            <input type="password" inputmode="numeric" id="importPasswordInput" placeholder="Wachtwoord van dit back-upbestand">
+          </div>
+          <div class="card-sub">Of plak hieronder een oude, onversleutelde back-up (JSON-tekst) van vóór de beveiligingsupdate:</div>
+          <textarea class="import-textarea" id="importTextarea" placeholder="Plak hier eventueel een oude onversleutelde JSON-back-up..."></textarea>
           <div class="add-row">
             <button id="importConfirmBtn" type="button">Gegevens herstellen</button>
             <button id="importCancelBtn" type="button" class="secondary">Annuleren</button>
@@ -511,6 +553,30 @@
     <div class="modal-actions">
       <button class="modal-cancel" id="modalCancel" type="button">Annuleren</button>
       <button class="modal-confirm" id="modalConfirm" type="button">Ja, reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vergrendelscherm (pincode setup / unlock) -->
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-box">
+    <div class="lock-logo">OnShift</div>
+
+    <div id="lockSetupView" style="display:none;">
+      <h3>Pincode instellen</h3>
+      <p class="lock-sub">Deze pincode versleutelt alle gegevens op dit toestel. Zonder deze code is er niets meer te herstellen — bewaar hem op een veilige, bij het team bekende plek.</p>
+      <input type="password" inputmode="numeric" id="setupPin1" class="lock-input" placeholder="Nieuwe pincode (min. 4 cijfers)" autocomplete="off">
+      <input type="password" inputmode="numeric" id="setupPin2" class="lock-input" placeholder="Herhaal pincode" autocomplete="off">
+      <button type="button" id="setupPinBtn" class="lock-btn">Pincode instellen &amp; starten</button>
+      <div class="lock-error" id="setupPinError">&nbsp;</div>
+    </div>
+
+    <div id="lockUnlockView" style="display:none;">
+      <h3>Vergrendeld</h3>
+      <p class="lock-sub">Voer de pincode van deze dienst in om verder te gaan.</p>
+      <input type="password" inputmode="numeric" id="unlockPin" class="lock-input" placeholder="Pincode" autocomplete="off">
+      <button type="button" id="unlockBtn" class="lock-btn">Ontgrendelen</button>
+      <div class="lock-error" id="unlockError">&nbsp;</div>
     </div>
   </div>
 </div>
