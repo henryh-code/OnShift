@@ -4,7 +4,7 @@
 
 "use strict";
 
-var CACHE_VERSION = "v12";
+var CACHE_VERSION = "v13";
 var CACHE_NAME = "onshift-" + CACHE_VERSION;
 
 var APP_SHELL = [
@@ -12,7 +12,8 @@ var APP_SHELL = [
   "./style.css",
   "./app.js",
   "./manifest.json",
-  "./icon.png"
+  "./icon.png",
+  "./zorgned-icon.png"
 ];
 
 // ---------- Install: app-shell precachen ----------

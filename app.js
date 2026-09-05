@@ -4,16 +4,51 @@
    agenda, taken, noodcontacten, stadsteams en sancties.
    =========================================================== */
 
-window.addEventListener("error", function(e){
-  var msg = "JS-fout: " + e.message +
-    "\nBestand: " + (e.filename || "onbekend") + ":" + e.lineno + ":" + e.colno +
-    (e.error && e.error.stack ? "\n\n" + e.error.stack : "");
-  var box = document.createElement("div");
-  box.style.cssText = "position:fixed;inset:0;z-index:99999;background:#7a1f1f;color:#fff;" +
-    "font:12px/1.4 monospace;padding:16px;overflow:auto;white-space:pre-wrap;";
-  box.textContent = msg;
-  document.body.appendChild(box);
-});
+(function(){
+  var errorToastShown = false;
+
+  function showErrorToast(){
+    if(errorToastShown) return;
+    errorToastShown = true;
+
+    function place(){
+      if(!document.body){
+        document.addEventListener("DOMContentLoaded", place, { once: true });
+        return;
+      }
+      var toast = document.createElement("div");
+      toast.setAttribute("role", "alert");
+      toast.style.cssText =
+        "position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;" +
+        "max-width:calc(100% - 32px);background:#212325;color:#e9eaec;" +
+        "border:1px solid #33363a;border-left:3px solid #d17a6d;border-radius:10px;" +
+        "padding:12px 16px;font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;" +
+        "box-shadow:0 8px 24px rgba(0,0,0,0.35);";
+      toast.textContent = "Er is een onverwachte fout opgetreden. Herlaad de app.";
+      document.body.appendChild(toast);
+      setTimeout(function(){
+        if(toast.parentNode) toast.parentNode.removeChild(toast);
+        errorToastShown = false;
+      }, 8000);
+    }
+
+    place();
+  }
+
+  window.addEventListener("error", function(e){
+    console.error(
+      "JS-fout:", e.message,
+      "\nBestand: " + (e.filename || "onbekend") + ":" + e.lineno + ":" + e.colno,
+      e.error && e.error.stack ? "\n" + e.error.stack : ""
+    );
+    showErrorToast();
+  });
+
+  window.addEventListener("unhandledrejection", function(e){
+    console.error("Onafgehandelde promise-afwijzing:", e.reason);
+    showErrorToast();
+  });
+})();
 
 (function(){
   "use strict";
