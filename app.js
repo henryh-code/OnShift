@@ -117,9 +117,9 @@
     stadsteam: true,
     beheerBewoners: true,
     beheerContacten: true,
-    beheerStadsteam: false,
+    beheerStadsteam: true,
     beheerBeveiliging: true,
-    beheerData: false,
+    beheerData: true,
     sanctiesWarnings: true,
     sanctiesBans: true
   };
@@ -627,9 +627,17 @@ function openZorgNedLink(url){
       else if(r.status === "absent") absent++;
       else unseen++;
     });
+    function tile(num, label){
+      return '<div class="stat-tile">' +
+               '<span class="stat-num">' + num + '</span>' +
+               '<span class="stat-label">' + label + '</span>' +
+             '</div>';
+    }
     residentSummary.innerHTML =
-      "<strong>" + seen + "</strong> gezien · <strong>" + absent + "</strong> afwezig · <strong>" + unseen + "</strong> nog niet gezien" +
-      " <span style=\"color:var(--text-faint)\">(" + state.residents.length + " totaal)</span>";
+      tile(seen, "Gezien") +
+      tile(absent, "Afwezig") +
+      tile(unseen, "Nog niet gezien") +
+      '<div class="stat-total">' + state.residents.length + ' bewoners totaal</div>';
   }
 
   function renderResidentDropdown(){
@@ -2477,7 +2485,7 @@ function openZorgNedLink(url){
   // ======================================================
   var autoLockSelect = document.getElementById("autoLockSelect");
   var lockNowBtnBeheer = document.getElementById("lockNowBtn");
-  var lockHeaderBtn = document.getElementById("lockHeaderBtn");
+  var lockSwitchBtn = document.getElementById("lockSwitch");
   var changePinCurrent = document.getElementById("changePinCurrent");
   var changePinNew1 = document.getElementById("changePinNew1");
   var changePinNew2 = document.getElementById("changePinNew2");
@@ -2491,7 +2499,32 @@ function openZorgNedLink(url){
   });
 
   lockNowBtnBeheer.addEventListener("click", function(){ if(cryptoKey) lockNow(); });
-  lockHeaderBtn.addEventListener("click", function(){ if(cryptoKey) lockNow(); });
+
+  // Switch-logo linksboven = vergrendelknop. Klik speelt de opstart-switch
+  // animatie in reverse af: eerst verdwijnen de bogen, dan schuift de knop
+  // naar 'uit'. Pas als de knop-animatie klaar is, vergrendelt de app.
+  if(lockSwitchBtn){
+    lockSwitchBtn.addEventListener("click", function(){
+      if(!cryptoKey) return;
+      if(lockSwitchBtn.classList.contains("is-locking")) return;
+      lockSwitchBtn.classList.add("is-locking");
+
+      var knob = lockSwitchBtn.querySelector(".ls-knob");
+      var done = false;
+      function finish(){
+        if(done) return;
+        done = true;
+        lockSwitchBtn.classList.remove("is-locking");
+        lockNow();
+      }
+      // Wacht op het einde van de knop-slide, laat 'm nog even in de 'uit'-stand staan.
+      if(knob){
+        knob.addEventListener("animationend", function(){ setTimeout(finish, 150); }, { once: true });
+      }
+      // Vangnet: reduced-motion of uitblijvend animationend.
+      setTimeout(finish, 1400);
+    });
+  }
 
   changePinBtn.addEventListener("click", function(){
     var cur = changePinCurrent.value;
