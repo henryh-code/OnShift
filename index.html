@@ -72,29 +72,46 @@
 
 <div class="app">
 
-  <div class="header">
-    <div>
-      <h1>OnShift</h1>
-      <div class="sub" id="shiftDate"></div>
+  <aside class="sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+      <img src="icon.png" alt="" class="brand-logo">
+      <h1 class="brand-name">OnShift</h1>
     </div>
-    <button class="lock-header-btn" id="lockHeaderBtn" type="button" aria-label="Vergrendel dienst nu" title="Vergrendel dienst nu">🔒</button>
-    <button class="reset-btn" id="resetBtn" type="button">Reset voor nieuwe dienst</button>
-  </div>
+    <nav class="sidebar-nav" aria-label="Hoofdnavigatie">
+      <button class="tab-btn active" id="tabBtnDashboard" type="button" data-tab="dashboard"><span class="nav-ico" aria-hidden="true">▦</span><span class="nav-label">Dashboard</span></button>
+      <button class="tab-btn" id="tabBtnAgenda" type="button" data-tab="agenda"><span class="nav-ico" aria-hidden="true">🗓</span><span class="nav-label">Agenda</span></button>
+      <button class="tab-btn" id="tabBtnBewoners" type="button" data-tab="bewoners"><span class="nav-ico" aria-hidden="true">👥</span><span class="nav-label">Bewoners</span></button>
+      <button class="tab-btn" id="tabBtnSancties" type="button" data-tab="sancties"><span class="nav-ico" aria-hidden="true">⚠️</span><span class="nav-label">Sancties</span></button>
+      <button class="tab-btn" id="tabBtnContacten" type="button" data-tab="contacten"><span class="nav-ico" aria-hidden="true">📇</span><span class="nav-label">Contacten</span></button>
+      <button class="tab-btn" id="tabBtnBeheer" type="button" data-tab="beheer"><span class="nav-ico" aria-hidden="true">⚙️</span><span class="nav-label">Instellingen / Beheer</span></button>
+    </nav>
+  </aside>
 
-  <div class="tabs">
-    <button class="tab-btn active" id="tabBtnDashboard" type="button" data-tab="dashboard">Dashboard</button>
-    <button class="tab-btn" id="tabBtnAgenda" type="button" data-tab="agenda">Agenda</button>
-    <button class="tab-btn" id="tabBtnBewoners" type="button" data-tab="bewoners">Bewoners</button>
-    <button class="tab-btn" id="tabBtnSancties" type="button" data-tab="sancties">Sancties</button>
-    <button class="tab-btn" id="tabBtnContacten" type="button" data-tab="contacten">Contacten</button>
-    <button class="tab-btn" id="tabBtnBeheer" type="button" data-tab="beheer">Instellingen / Beheer</button>
-  </div>
+  <div class="nav-backdrop" id="navBackdrop"></div>
+
+  <div class="main">
+
+    <div class="topbar">
+      <div class="topbar-lead">
+        <button class="nav-toggle" id="navToggle" type="button" aria-label="Menu openen" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-title">
+          <span class="topbar-eyebrow">Huidige dienst</span>
+          <div class="sub" id="shiftDate"></div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="lock-header-btn" id="lockHeaderBtn" type="button" aria-label="Vergrendel dienst nu" title="Vergrendel dienst nu">🔒</button>
+        <button class="reset-btn" id="resetBtn" type="button">Reset voor nieuwe dienst</button>
+      </div>
+    </div>
 
   <!-- ===================== DASHBOARD ===================== -->
-  <div class="tab-panel active" id="panelDashboard">
+  <div class="tab-panel active panel-grid" id="panelDashboard">
 
     <!-- Overdracht -->
-    <section class="card">
+    <section class="card card-wide">
       <div class="card-head" data-panel="overdracht" role="button" tabindex="0" aria-expanded="true">
         <div class="card-title"><span class="dot"></span>Dienstoverdracht &amp; bijzonderheden</div>
         <span class="card-chevron">▾</span>
@@ -138,7 +155,7 @@
     </section>
 
     <!-- Bewoners -->
-    <section class="card">
+    <section class="card card-wide">
       <div class="card-head" data-panel="bewoners" role="button" tabindex="0" aria-expanded="true">
         <div class="card-title"><span class="dot"></span>Bewoners &amp; aanwezigheid</div>
         <span class="card-chevron">▾</span>
@@ -332,7 +349,7 @@
   </div>
 
   <!-- ===================== SANCTIES ===================== -->
-  <div class="tab-panel" id="panelSancties">
+  <div class="tab-panel panel-grid" id="panelSancties">
 
     <!-- Officiële waarschuwingen -->
     <section class="card">
@@ -389,7 +406,7 @@
   </div>
 
   <!-- ===================== CONTACTEN ===================== -->
-  <div class="tab-panel" id="panelContacten">
+  <div class="tab-panel panel-grid" id="panelContacten">
     <section class="card">
       <div class="card-head">
         <div class="card-title"><span class="dot"></span>Stadsteam Backup</div>
@@ -416,10 +433,10 @@
   </div>
 
   <!-- ===================== BEHEER ===================== -->
-  <div class="tab-panel" id="panelBeheer">
+  <div class="tab-panel panel-grid" id="panelBeheer">
 
     <!-- Bewoners beheren -->
-    <section class="card">
+    <section class="card card-wide">
       <div class="card-head" data-panel="beheerBewoners" role="button" tabindex="0" aria-expanded="true">
         <div class="card-title"><span class="dot"></span>Bewoners beheren</div>
         <span class="card-chevron">▾</span>
@@ -544,7 +561,9 @@
     <footer class="hint">Wijzigingen hier gelden meteen ook op het Dashboard.</footer>
   </div>
 
-</div>
+  </div><!-- /.main -->
+
+</div><!-- /.app -->
 
 <!-- Reset confirmatie modal -->
 <div class="modal-overlay" id="modalOverlay">
@@ -561,7 +580,7 @@
 <!-- Vergrendelscherm (pincode setup / unlock) -->
 <div class="lock-overlay" id="lockOverlay">
   <div class="lock-box">
-    <div class="lock-logo">OnShift</div>
+    <div class="lock-logo"><img src="icon.png" alt="" class="lock-logo-img">OnShift</div>
 
     <div id="lockSetupView" style="display:none;">
       <h3>Pincode instellen</h3>
@@ -583,6 +602,33 @@
 </div>
 
 <script src="./app.js" defer></script>
+<script>
+  /* Alleen de mobiele sidebar-drawer aansturen — losstaand van app.js. */
+  (function(){
+    var app = document.querySelector(".app");
+    var toggle = document.getElementById("navToggle");
+    var backdrop = document.getElementById("navBackdrop");
+    if(!app || !toggle) return;
+
+    function setNav(open){
+      app.classList.toggle("nav-open", open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    toggle.addEventListener("click", function(){
+      setNav(!app.classList.contains("nav-open"));
+    });
+    if(backdrop){
+      backdrop.addEventListener("click", function(){ setNav(false); });
+    }
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape" && app.classList.contains("nav-open")) setNav(false);
+    });
+    document.querySelectorAll(".sidebar-nav .tab-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){ setNav(false); });
+    });
+  })();
+</script>
 <script>
   if("serviceWorker" in navigator){
     window.addEventListener("load", function(){
