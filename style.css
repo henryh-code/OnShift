@@ -5,39 +5,75 @@
    =========================================================== */
 
   :root{
-    --bg: #17181a;
-    --bg-raised: #1e2022;
-    --card: #212325;
-    --border: #33363a;
-    --border-soft: #2a2c2f;
-    --text: #e9eaec;
-    --text-soft: #a7abb0;
-    --text-faint: #6f7379;
-    --accent: #6fa693;
-    --accent-soft: rgba(111, 166, 147, 0.16);
-    --accent-text: #93c4b1;
-    --warn: #cf9a6f;
-    --warn-soft: rgba(207, 154, 111, 0.16);
-    --violet: #a89bd6;
-    --violet-soft: rgba(168, 155, 214, 0.16);
-    --danger: #d17a6d;
-    --danger-soft: rgba(209, 122, 109, 0.15);
+    /* Native controls (selects, datum-/tijdkiezers, scrollbars) in donker
+       renderen -> leesbare iconen en pop-ups. */
+    color-scheme: dark;
+
+    /* ===========================================================
+       THEMA — opgebouwd rond de twee logo-kleuren:
+         teal-groen  #6fa693  (primair, interactie)
+         amber       #e0a568  (secundair, warme accenten / aandacht)
+       Basis is een diep, licht-warm neutraal donker.
+       =========================================================== */
+
+    /* Oppervlakken */
+    --bg:          #15171a;
+    --bg-raised:   #1d2023;
+    --card:        #23272c;
+    --border:      #363b41;
+    --border-soft: #2b3035;
+    --hairline:    rgba(255, 255, 255, 0.055);
+
+    /* Tekst */
+    --title:      #ffffff;
+    --text:       #e9ebee;
+    --text-soft:  #abb0b6;
+    --text-faint: #737980;
+    --meta:       #9aa1a8;
+    --meta-dim:   #6c7278;
+
+    /* Primair — logo groen/teal */
+    --accent:      #6fa693;
+    --accent-text: #9fd2be;
+    --accent-soft: rgba(111, 166, 147, 0.15);
+    --accent-line: rgba(111, 166, 147, 0.32);
+    --on-accent:   #0f1f19;
+
+    /* Secundair — logo amber */
+    --gold:        #e0a568;
+    --gold-text:   #eec297;
+    --gold-soft:   rgba(224, 165, 104, 0.15);
+    --gold-line:   rgba(224, 165, 104, 0.30);
+    --on-gold:     #241708;
+
+    /* Merk-gradient — exact de logo-gradient (groen -> amber) */
+    --brand-gradient: linear-gradient(100deg, #6fa693 0%, #e0a568 100%);
+
+    /* Status */
+    --warn:      var(--gold);
+    --warn-soft: var(--gold-soft);
+    --slate:      #8496a8;
+    --slate-soft: rgba(132, 150, 168, 0.15);
+    --on-slate:   #17202a;
+    --danger:      #db7a6b;
+    --danger-text: #ec9f94;
+    --danger-soft: rgba(219, 122, 107, 0.16);
+    --danger-line: #6a3a33;
+    --on-danger:   #2a120e;
+
+    /* Aliassen zodat oudere selectors blijven werken */
+    --violet: var(--slate);
+    --violet-soft: var(--slate-soft);
+
+    /* Vorm & schaduw */
     --radius: 10px;
     --radius-sm: 7px;
-
-    /* --- Bento-modernisering: nieuwe helpers, bestaande tokens ongewijzigd --- */
     --radius-lg: 20px;
     --radius-md: 14px;
     --radius-pill: 9999px;
-    --shadow-card: 0 1px 2px rgba(0,0,0,0.30), 0 18px 40px -20px rgba(0,0,0,0.55);
-    --shadow-pop: 0 12px 30px -8px rgba(0,0,0,0.55);
-    --hairline: rgba(255,255,255,0.05);
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.34), 0 20px 44px -22px rgba(0,0,0,0.6);
+    --shadow-pop: 0 14px 34px -10px rgba(0,0,0,0.62);
     --tap-min: 44px;
-
-    /* Tekstcontrast (nieuw): titels helder wit, metadata gedempt grijs */
-    --title: #ffffff;
-    --meta: #9ca3af;
-    --meta-dim: #6b7280;
   }
 
   *{ box-sizing: border-box; }
@@ -58,6 +94,22 @@
 
   input::placeholder,
   textarea::placeholder{ color: var(--meta); opacity: 1; }
+
+  /* Native select-uitklap + datum/tijd-pop-ups leesbaar op donker
+     (color-scheme: dark zet de kiezer-iconen al licht). */
+  select option,
+  select optgroup{
+    background: var(--bg-raised);
+    color: var(--text);
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator{
+    opacity: 0.9;
+    cursor: pointer;
+    transition: opacity .12s ease;
+  }
+  input[type="date"]:hover::-webkit-calendar-picker-indicator,
+  input[type="time"]:hover::-webkit-calendar-picker-indicator{ opacity: 1; }
 
   ::-webkit-scrollbar{ width: 9px; height: 9px; }
   ::-webkit-scrollbar-track{ background: transparent; }
@@ -104,12 +156,24 @@
 
   .sidebar-brand{ display: flex; align-items: center; gap: 12px; padding: 2px 6px 0; }
 
+  /* Woordmerk in de logo-gradient (groen -> amber) */
   .brand-name{
     font-size: 1.3rem;
     font-weight: 700;
     margin: 0;
-    color: var(--title);
     letter-spacing: -0.022em;
+    color: var(--accent-text);
+  }
+  @supports ((-webkit-background-clip: text) or (background-clip: text)){
+    .brand-name,
+    .splash-title,
+    .lock-logo-text{
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
   }
 
   /* ---------- Interactieve lock-switch (logo = vergrendelknop) ---------- */
@@ -207,9 +271,20 @@
     white-space: nowrap;
     transition: background .14s ease, color .14s ease;
   }
-  .sidebar-nav .tab-btn{ color: var(--meta); }
+  .sidebar-nav .tab-btn{ position: relative; color: var(--meta); }
   .sidebar-nav .tab-btn:hover{ background: var(--bg-raised); color: var(--text); }
   .sidebar-nav .tab-btn.active{ background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+  .sidebar-nav .tab-btn.active::before{
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    border-radius: 0 3px 3px 0;
+    background: var(--brand-gradient);
+  }
 
   .nav-ico{
     display: inline-flex;
@@ -280,10 +355,10 @@
 
   .topbar-eyebrow{
     font-size: 0.72rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .09em;
-    color: var(--meta-dim);
+    letter-spacing: .1em;
+    color: var(--gold-text);
   }
 
   .topbar .sub{
@@ -409,9 +484,9 @@
   .link-btn{
     background: none;
     border: none;
-    color: var(--accent-text);
+    color: var(--gold-text);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     padding: 4px 0;
     font-family: inherit;
@@ -471,7 +546,7 @@
     transition: color .12s ease, background .12s ease, border-color .12s ease;
   }
 
-  .remove-btn:hover{ color: var(--danger); background: var(--danger-soft); border-color: #5c332e; }
+  .remove-btn:hover{ color: var(--danger-text); background: var(--danger-soft); border-color: var(--danger-line); }
 
   .add-row{ display: flex; gap: 8px; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--hairline); flex-wrap: wrap; }
 
@@ -500,7 +575,7 @@
 
   .add-row button{
     background: var(--accent);
-    color: #10201a;
+    color: var(--on-accent);
     border: none;
     border-radius: var(--radius-md);
     padding: 11px 18px;
@@ -603,7 +678,7 @@
   .af-submit{
     width: 100%;
     background: var(--accent);
-    color: #10201a;
+    color: var(--on-accent);
     border: none;
     border-radius: var(--radius-md);
     padding: 12px 16px;
@@ -630,9 +705,14 @@
     gap: 4px;
     background: var(--bg-raised);
     border: 1px solid var(--border-soft);
+    border-top: 2px solid var(--border);
     border-radius: var(--radius-md);
-    padding: 14px 14px 13px;
+    padding: 13px 14px;
   }
+  .stat-tile.st-seen{ border-top-color: var(--accent-line); }
+  .stat-tile.st-unseen{ border-top-color: var(--gold-line); }
+  .stat-tile.st-absent{ border-top-color: var(--slate-soft); }
+
   .stat-num{
     font-size: 1.7rem;
     font-weight: 700;
@@ -640,6 +720,10 @@
     color: var(--title);
     font-variant-numeric: tabular-nums;
   }
+  .stat-tile.st-seen .stat-num{ color: var(--accent-text); }
+  .stat-tile.st-unseen .stat-num{ color: var(--gold-text); }
+  .stat-tile.st-absent .stat-num{ color: var(--slate); }
+
   .stat-label{ font-size: 0.75rem; font-weight: 500; color: var(--meta); line-height: 1.3; }
   .stat-total{
     grid-column: 1 / -1;
@@ -820,6 +904,10 @@
 
   .resident-detail-card.st-seen{ background: var(--accent-soft); border-color: var(--accent); }
   .resident-detail-card.st-absent{ background: var(--warn-soft); border-color: var(--warn); }
+
+  /* In de bewonerslijst: geen dubbele kop, alleen de bewerkvelden. */
+  .resident-detail-card.in-list{ background: var(--card); border-color: var(--border-soft); }
+  .resident-detail-actions{ display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 
   .resident-detail-head{ display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .resident-detail-name-wrap{ display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -1118,21 +1206,21 @@
   }
 
   .filter-pill:hover{ border-color: var(--text-faint); color: var(--text); }
-  .filter-pill.active{ background: var(--accent); color: #10201a; border-color: var(--accent); font-weight: 600; }
+  .filter-pill.active{ background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
   .stadsteam-search-wrap{ position: relative; margin-bottom: 12px; }
   .stadsteam-search-wrap .af-title{ padding-right: 38px; margin-bottom: 0; border-radius: var(--radius-pill); }
 
   #stadsteamFilters .filter-pill.active[data-team="volwassenen"],
   #stadsteamFiltersTab .filter-pill.active[data-team="volwassenen"]{
-    background: var(--accent); border-color: var(--accent); color: #10201a;
+    background: var(--accent); border-color: var(--accent); color: var(--on-accent);
   }
   #stadsteamFilters .filter-pill.active[data-team="jongvolwassenen"],
   #stadsteamFiltersTab .filter-pill.active[data-team="jongvolwassenen"]{
-    background: var(--violet); border-color: var(--violet); color: #1c1830;
+    background: var(--slate); border-color: var(--slate); color: var(--on-slate);
   }
   #stadsteamFilters .filter-pill.active[data-team="veldwerkers"],
   #stadsteamFiltersTab .filter-pill.active[data-team="veldwerkers"]{
-    background: var(--warn); border-color: var(--warn); color: #2a1a0e;
+    background: var(--gold); border-color: var(--gold); color: var(--on-gold);
   }
 
   .stadsteam-list{
@@ -1162,8 +1250,8 @@
   }
 
   .team-label.team-volwassenen{ background: var(--accent-soft); color: var(--accent-text); }
-  .team-label.team-jongvolwassenen{ background: var(--violet-soft); color: var(--violet); }
-  .team-label.team-veldwerkers{ background: var(--warn-soft); color: var(--warn); }
+  .team-label.team-jongvolwassenen{ background: var(--slate-soft); color: var(--slate); }
+  .team-label.team-veldwerkers{ background: var(--gold-soft); color: var(--gold-text); }
 
   .stadsteam-item-contact{ display: flex; flex-wrap: wrap; gap: 4px 12px; }
 
@@ -1223,7 +1311,7 @@
     transition: all .12s ease;
   }
 
-  .view-switch button.active{ background: var(--accent); color: #10201a; }
+  .view-switch button.active{ background: var(--accent); color: var(--on-accent); }
 
   /* ---------- Kalender maandweergave ---------- */
   /* Compact gehouden zodat de hele maand zonder scrollen op het scherm past. */
@@ -1277,8 +1365,9 @@
 
   .cal-cell:hover{ background: var(--card); border-color: var(--border); }
   .cal-cell.empty{ background: transparent; cursor: default; pointer-events: none; }
-  .cal-cell.today{ border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
-  .cal-cell.selected{ background: var(--accent-soft); border-color: var(--accent); }
+  .cal-cell.today{ border-color: var(--gold-line); color: var(--gold-text); font-weight: 700; }
+  .cal-cell.selected{ background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+  .cal-cell.today.selected{ border-color: var(--accent); }
   .cal-cell{ font-variant-numeric: tabular-nums; }
 
   .cal-dot{ font-size: 9px; line-height: 1; color: var(--bg); background: var(--accent); border-radius: 100px; min-width: 6px; height: 6px; padding: 0; }
@@ -1288,7 +1377,7 @@
   .day-toolbar{ display: flex; align-items: center; justify-content: center; gap: 8px; margin: 12px 0 10px; flex-wrap: wrap; }
   .day-label-wrap{ display: flex; align-items: center; gap: 6px; }
   .day-label{ font-size: 13.5px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
-  .day-label.today-label{ color: var(--accent-text); }
+  .day-label.today-label{ color: var(--gold-text); }
 
   .day-agenda-list{ display: flex; flex-direction: column; gap: 1px; margin-bottom: 4px; }
   .day-agenda-item{ display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
@@ -1325,7 +1414,7 @@
   .modal-actions button{ font-size: 0.85rem; font-weight: 500; padding: 11px 18px; min-height: var(--tap-min); border-radius: var(--radius-pill); cursor: pointer; font-family: inherit; }
 
   .modal-cancel{ background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-soft); }
-  .modal-confirm{ background: var(--danger); border: 1px solid var(--danger); color: #241110; font-weight: 600; }
+  .modal-confirm{ background: var(--danger); border: 1px solid var(--danger); color: var(--on-danger); font-weight: 600; }
   .modal-confirm:hover{ filter: brightness(1.1); }
   .modal-cancel:hover{ background: var(--card); }
 
@@ -1534,10 +1623,10 @@
     gap: 12px;
     font-size: 1.4rem;
     font-weight: 700;
-    color: var(--title);
     margin-bottom: 20px;
     letter-spacing: -0.02em;
   }
+  .lock-logo-text{ color: var(--accent-text); }
 
   .lock-logo-img{ width: 56px; height: 56px; object-fit: contain; border-radius: 12px; mix-blend-mode: lighten; }
 
@@ -1565,7 +1654,7 @@
   .lock-btn{
     width: 100%;
     background: var(--accent);
-    color: #10201a;
+    color: var(--on-accent);
     border: none;
     border-radius: var(--radius-md);
     padding: 13px 16px;
@@ -1687,9 +1776,9 @@
 
   .splash-title{
     margin-top: 14px;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 700;
-    color: var(--text);
+    color: var(--accent-text);
     letter-spacing: -0.01em;
     animation: splashTitleAnim 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 1.6s both;
   }

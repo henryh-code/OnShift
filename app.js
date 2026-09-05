@@ -20,10 +20,10 @@
       toast.setAttribute("role", "alert");
       toast.style.cssText =
         "position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;" +
-        "max-width:calc(100% - 32px);background:#212325;color:#e9eaec;" +
-        "border:1px solid #33363a;border-left:3px solid #d17a6d;border-radius:10px;" +
+        "max-width:calc(100% - 32px);background:#23272c;color:#e9ebee;" +
+        "border:1px solid #363b41;border-left:3px solid #db7a6b;border-radius:12px;" +
         "padding:12px 16px;font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;" +
-        "box-shadow:0 8px 24px rgba(0,0,0,0.35);";
+        "box-shadow:0 8px 24px rgba(0,0,0,0.4);";
       toast.textContent = "Er is een onverwachte fout opgetreden. Herlaad de app.";
       document.body.appendChild(toast);
       setTimeout(function(){
@@ -627,16 +627,16 @@ function openZorgNedLink(url){
       else if(r.status === "absent") absent++;
       else unseen++;
     });
-    function tile(num, label){
-      return '<div class="stat-tile">' +
+    function tile(num, label, mod){
+      return '<div class="stat-tile ' + mod + '">' +
                '<span class="stat-num">' + num + '</span>' +
                '<span class="stat-label">' + label + '</span>' +
              '</div>';
     }
     residentSummary.innerHTML =
-      tile(seen, "Gezien") +
-      tile(absent, "Afwezig") +
-      tile(unseen, "Nog niet gezien") +
+      tile(seen, "Gezien", "st-seen") +
+      tile(absent, "Afwezig", "st-absent") +
+      tile(unseen, "Nog niet gezien", "st-unseen") +
       '<div class="stat-total">' + state.residents.length + ' bewoners totaal</div>';
   }
 
@@ -785,84 +785,99 @@ function openZorgNedLink(url){
     return wrap;
   }
 
-  function buildResidentDetailCard(resident){
+  function buildResidentDetailCard(resident, opts){
+    opts = opts || {};
+    var inList = !!opts.inList;
+
     var card = document.createElement("div");
-    card.className = "resident-detail-card " + STATUS_META[resident.status].cls;
+    card.className = "resident-detail-card " + STATUS_META[resident.status].cls + (inList ? " in-list" : "");
 
-    var head = document.createElement("div");
-    head.className = "resident-detail-head";
-
-    var nameWrap = document.createElement("div");
-    nameWrap.className = "resident-detail-name-wrap";
-
-    nameWrap.appendChild(buildStatusIndicator(resident));
-
-    var nameEl = document.createElement("span");
-    nameEl.className = "resident-detail-name";
-    nameEl.textContent = resident.name;
-    nameWrap.appendChild(nameEl);
-
-    if(resident.room){
-      var roomBadge = document.createElement("span");
-      roomBadge.className = "resident-detail-room";
-      roomBadge.textContent = "Kamer " + resident.room;
-      nameWrap.appendChild(roomBadge);
-    }
-
-    if(resident.locker){
-      var lockerBadge = document.createElement("span");
-      lockerBadge.className = "resident-detail-room";
-      lockerBadge.textContent = "Kluis " + resident.locker;
-      nameWrap.appendChild(lockerBadge);
-    }
-
-    if(resident.isAttention){
-      var attentionBadge = document.createElement("span");
-      attentionBadge.className = "attention-flag-badge";
-      attentionBadge.textContent = "🚩 Aandacht";
-      nameWrap.appendChild(attentionBadge);
-    }
-
-    if(resident.clientnr){
+    function makeZorgnedBtn(){
       var zorgnedUrl = "https://utrecht.zorgned.nl/prod/applicatie/Regie?lcclientnr=" + encodeURIComponent(resident.clientnr) + "&section=1";
-      var zorgnedLink = document.createElement("button");
-      zorgnedLink.type = "button";
-      zorgnedLink.className = "zorgned-badge";
-      var zorgnedIcon = document.createElement("img");
-      zorgnedIcon.src = "zorgned-icon.png";
-      zorgnedIcon.alt = "";
-      zorgnedIcon.className = "zorgned-badge-icon";
-      zorgnedLink.appendChild(zorgnedIcon);
-      zorgnedLink.appendChild(document.createTextNode("ZorgNed ↗"));
-      zorgnedLink.setAttribute("aria-label", "Open cliëntdossier in ZorgNed");
-      zorgnedLink.addEventListener("click", function(){ openZorgNedLink(zorgnedUrl); });
-      nameWrap.appendChild(zorgnedLink);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "zorgned-badge";
+      var ic = document.createElement("img");
+      ic.src = "zorgned-icon.png";
+      ic.alt = "";
+      ic.className = "zorgned-badge-icon";
+      btn.appendChild(ic);
+      btn.appendChild(document.createTextNode("ZorgNed ↗"));
+      btn.setAttribute("aria-label", "Open cliëntdossier in ZorgNed");
+      btn.addEventListener("click", function(){ openZorgNedLink(zorgnedUrl); });
+      return btn;
     }
 
-    head.appendChild(nameWrap);
+    if(!inList){
+      // Dashboard: de kop toont naam/kamer/status + vorige/volgende-navigatie.
+      var head = document.createElement("div");
+      head.className = "resident-detail-head";
 
-    var nav = document.createElement("div");
-    nav.className = "resident-nav";
+      var nameWrap = document.createElement("div");
+      nameWrap.className = "resident-detail-name-wrap";
 
-    var prevBtn = document.createElement("button");
-    prevBtn.type = "button";
-    prevBtn.className = "resident-nav-btn";
-    prevBtn.setAttribute("aria-label", "Vorige bewoner");
-    prevBtn.textContent = "‹";
-    prevBtn.addEventListener("click", function(){ navigateResident(-1); });
+      nameWrap.appendChild(buildStatusIndicator(resident));
 
-    var nextBtn = document.createElement("button");
-    nextBtn.type = "button";
-    nextBtn.className = "resident-nav-btn";
-    nextBtn.setAttribute("aria-label", "Volgende bewoner");
-    nextBtn.textContent = "›";
-    nextBtn.addEventListener("click", function(){ navigateResident(1); });
+      var nameEl = document.createElement("span");
+      nameEl.className = "resident-detail-name";
+      nameEl.textContent = resident.name;
+      nameWrap.appendChild(nameEl);
 
-    nav.appendChild(prevBtn);
-    nav.appendChild(nextBtn);
-    head.appendChild(nav);
+      if(resident.room){
+        var roomBadge = document.createElement("span");
+        roomBadge.className = "resident-detail-room";
+        roomBadge.textContent = "Kamer " + resident.room;
+        nameWrap.appendChild(roomBadge);
+      }
 
-    card.appendChild(head);
+      if(resident.locker){
+        var lockerBadge = document.createElement("span");
+        lockerBadge.className = "resident-detail-room";
+        lockerBadge.textContent = "Kluis " + resident.locker;
+        nameWrap.appendChild(lockerBadge);
+      }
+
+      if(resident.isAttention){
+        var attentionBadge = document.createElement("span");
+        attentionBadge.className = "attention-flag-badge";
+        attentionBadge.textContent = "🚩 Aandacht";
+        nameWrap.appendChild(attentionBadge);
+      }
+
+      if(resident.clientnr) nameWrap.appendChild(makeZorgnedBtn());
+
+      head.appendChild(nameWrap);
+
+      var nav = document.createElement("div");
+      nav.className = "resident-nav";
+
+      var prevBtn = document.createElement("button");
+      prevBtn.type = "button";
+      prevBtn.className = "resident-nav-btn";
+      prevBtn.setAttribute("aria-label", "Vorige bewoner");
+      prevBtn.textContent = "‹";
+      prevBtn.addEventListener("click", function(){ navigateResident(-1); });
+
+      var nextBtn = document.createElement("button");
+      nextBtn.type = "button";
+      nextBtn.className = "resident-nav-btn";
+      nextBtn.setAttribute("aria-label", "Volgende bewoner");
+      nextBtn.textContent = "›";
+      nextBtn.addEventListener("click", function(){ navigateResident(1); });
+
+      nav.appendChild(prevBtn);
+      nav.appendChild(nextBtn);
+      head.appendChild(nav);
+
+      card.appendChild(head);
+    } else if(resident.clientnr){
+      // Bewonerslijst: naam/kamer/status staan al in de rij erboven — alleen
+      // de ZorgNed-actie is hier nog relevant.
+      var actionRow = document.createElement("div");
+      actionRow.className = "resident-detail-actions";
+      actionRow.appendChild(makeZorgnedBtn());
+      card.appendChild(actionRow);
+    }
 
     var noteInput = document.createElement("input");
     noteInput.type = "text";
@@ -1332,7 +1347,7 @@ function openZorgNedLink(url){
       if(isExpanded){
         var expandedLi = document.createElement("li");
         expandedLi.className = "resident-full-expanded-wrap";
-        expandedLi.appendChild(buildResidentDetailCard(resident));
+        expandedLi.appendChild(buildResidentDetailCard(resident, { inList: true }));
         residentsFullList.appendChild(expandedLi);
       }
     });
