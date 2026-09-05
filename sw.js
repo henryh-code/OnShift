@@ -4,7 +4,7 @@
 
 "use strict";
 
-var CACHE_VERSION = "v11";
+var CACHE_VERSION = "v12";
 var CACHE_NAME = "onshift-" + CACHE_VERSION;
 
 var APP_SHELL = [
