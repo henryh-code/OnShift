@@ -120,6 +120,7 @@
     beheerStadsteam: true,
     beheerBeveiliging: true,
     beheerData: true,
+    beheerTour: true,
     sanctiesWarnings: true,
     sanctiesBans: true
   };
@@ -2819,6 +2820,7 @@ function openZorgNedLink(url){
     appEl.style.display = "";
     renderAll();
     resetInactivityTimer();
+    maybeStartTour();
   }
 
   function lockNow(){
@@ -2911,6 +2913,212 @@ function openZorgNedLink(url){
   unlockPin.addEventListener("keydown", function(e){
     if(e.key === "Enter"){ e.preventDefault(); handleUnlockSubmit(); }
   });
+
+  // ======================================================
+  // ---------- Onboarding-rondleiding --------------------
+  // ======================================================
+  var TOUR_FLAG_LS_KEY = "onshift_tour_completed";
+
+  var tourRoot = document.getElementById("tourRoot");
+  var tourSpot = document.getElementById("tourSpot");
+  var tourCard = document.getElementById("tourCard");
+  var tourStepEl = document.getElementById("tourStep");
+  var tourTitleEl = document.getElementById("tourTitle");
+  var tourTextEl = document.getElementById("tourText");
+  var tourSkipBtn = document.getElementById("tourSkip");
+  var tourNextBtn = document.getElementById("tourNext");
+  var tourRestartBtn = document.getElementById("tourRestartBtn");
+
+  var TOUR_STEPS = [
+    {
+      title: "Dienstoverdracht & bijzonderheden",
+      text: "Typ hier lopende zaken en bijzonderheden tijdens de dienst. Alles wordt tijdens het typen direct versleuteld opgeslagen.",
+      target: function(){ var el = document.getElementById("handoverNote"); return el ? el.closest(".card") : null; }
+    },
+    {
+      title: "Aandachtsdossiers & ZorgNed",
+      text: "Bewoners die extra observatie vragen staan hier direct in het zicht, inclusief deeplink naar hun ZorgNed-dossier (behoudt je 2FA-sessie).",
+      target: function(){ var h = document.querySelector('.card-head[data-panel="aandacht"]'); return h ? h.closest(".card") : null; }
+    },
+    {
+      title: "Dagplanning & taken",
+      text: "Vink vaste rondes af (zoals medicatierondes en veiligheidschecks) of voeg snel ad-hoc teamtaken toe.",
+      target: function(){ var h = document.querySelector('.card-head[data-panel="taken"]'); return h ? h.closest(".card") : null; }
+    },
+    {
+      title: "Aanwezigheidsregistratie",
+      text: "Registreer statussen met de statustip (Nog niet gezien / Gezien / Afwezig), zoek bewoners op, en zie direct eventuele actieve pandverboden of sancties.",
+      target: function(){ var h = document.querySelector('.card-head[data-panel="bewoners"]'); return h ? h.closest(".card") : null; }
+    },
+    {
+      title: "Volledige controle & contacten",
+      text: "Schakel naar de maandagenda, beheer officiële waarschuwingen en pandverboden, of raadpleeg direct noodnummers en het Stadsteam-adresboek.",
+      target: function(){ return document.querySelector(".sidebar-nav"); },
+      mobileNav: true
+    },
+    {
+      title: "Veiligheid & dienstwissel",
+      text: "Klik op het OnShift-schakelaarlogo om de app direct met animatie te vergrendelen. Klaar met de dienst? Gebruik ‘Reset voor nieuwe dienst’ om de overdrachtsnotities en afgevinkte taken schoon te vegen voor de volgende collega.",
+      target: function(){ return document.querySelector(".sidebar-brand"); },
+      mobileNav: true
+    }
+  ];
+
+  var tourIdx = 0;
+  var tourActive = false;
+
+  function tourIsMobile(){
+    return !!(window.matchMedia && window.matchMedia("(max-width: 1023px)").matches);
+  }
+
+  function tourReposition(){
+    if(!tourActive) return;
+    var step = TOUR_STEPS[tourIdx];
+    var el = step.target();
+    if(!el) return;
+    positionTourTo(el, step);
+  }
+
+  function positionTourTo(el, step){
+    var r = el.getBoundingClientRect();
+    var pad = 8;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+
+    var top = Math.max(6, r.top - pad);
+    var left = Math.max(6, r.left - pad);
+    var width = Math.min(vw - 12, r.width + pad * 2);
+    var height = Math.min(vh - 12, r.height + pad * 2);
+
+    tourSpot.style.top = top + "px";
+    tourSpot.style.left = left + "px";
+    tourSpot.style.width = width + "px";
+    tourSpot.style.height = height + "px";
+
+    var mobile = tourIsMobile();
+    tourCard.classList.toggle("is-sheet", mobile);
+
+    if(mobile){
+      tourCard.style.top = "";
+      tourCard.style.left = "";
+      return;
+    }
+
+    var cw = tourCard.offsetWidth;
+    var ch = tourCard.offsetHeight;
+    var gap = 16;
+    var m = 10; // veiligheidsmarge tot de viewportrand
+    var cardTop, cardLeft;
+
+    function clampLeft(x){ return Math.max(m, Math.min(x, vw - cw - m)); }
+    function clampTop(y){ return Math.max(m, Math.min(y, vh - ch - m)); }
+
+    var centreX = clampLeft(r.left + r.width / 2 - cw / 2);
+    var centreY = clampTop(r.top + r.height / 2 - ch / 2);
+
+    if(r.right + gap + cw <= vw - m){
+      // rechts van het doel (o.a. de sidebar-stappen)
+      cardLeft = r.right + gap;
+      cardTop = centreY;
+    }else if(r.left - gap - cw >= m){
+      // links van het doel
+      cardLeft = r.left - gap - cw;
+      cardTop = centreY;
+    }else if(r.bottom + gap + ch <= vh - m){
+      // onder het doel
+      cardTop = r.bottom + gap;
+      cardLeft = centreX;
+    }else if(r.top - gap - ch >= m){
+      // boven het doel
+      cardTop = r.top - gap - ch;
+      cardLeft = centreX;
+    }else{
+      // past nergens naast -> onderaan vastzetten, doel blijft zichtbaar erboven
+      cardLeft = centreX;
+      cardTop = vh - ch - m;
+    }
+
+    tourCard.style.top = clampTop(cardTop) + "px";
+    tourCard.style.left = clampLeft(cardLeft) + "px";
+  }
+
+  function showTourStep(){
+    var step = TOUR_STEPS[tourIdx];
+
+    if(step.mobileNav && tourIsMobile()) appEl.classList.add("nav-open");
+    else appEl.classList.remove("nav-open");
+
+    tourStepEl.textContent = "Stap " + (tourIdx + 1) + " van " + TOUR_STEPS.length;
+    tourTitleEl.textContent = step.title;
+    tourTextEl.textContent = step.text;
+    tourNextBtn.textContent = (tourIdx === TOUR_STEPS.length - 1) ? "Afronden" : "Volgende";
+
+    var el = step.target();
+    if(!el){
+      if(tourIdx < TOUR_STEPS.length - 1){ tourIdx++; showTourStep(); return; }
+      endTour();
+      return;
+    }
+
+    var waitMs = (step.mobileNav && tourIsMobile()) ? 300 : 0;
+    if(!step.mobileNav){
+      try{ el.scrollIntoView({ block: "center", inline: "nearest" }); }catch(e){ try{ el.scrollIntoView(); }catch(e2){} }
+      waitMs = 60;
+    }
+    setTimeout(function(){ positionTourTo(el, step); }, waitMs);
+  }
+
+  function startTour(){
+    if(!state) return;
+    activateTab("dashboard");
+    tourIdx = 0;
+    tourActive = true;
+    tourRoot.hidden = false;
+    window.addEventListener("resize", tourReposition);
+    window.addEventListener("scroll", tourReposition, true);
+    document.addEventListener("keydown", tourKeyHandler, true);
+    showTourStep();
+  }
+
+  function endTour(){
+    tourActive = false;
+    tourRoot.hidden = true;
+    appEl.classList.remove("nav-open");
+    window.removeEventListener("resize", tourReposition);
+    window.removeEventListener("scroll", tourReposition, true);
+    document.removeEventListener("keydown", tourKeyHandler, true);
+    try{ localStorage.setItem(TOUR_FLAG_LS_KEY, "1"); }catch(e){}
+  }
+
+  function tourKeyHandler(e){
+    if(!tourActive) return;
+    if(e.key === "Escape"){ e.preventDefault(); endTour(); }
+  }
+
+  function maybeStartTour(){
+    var done = null;
+    try{ done = localStorage.getItem(TOUR_FLAG_LS_KEY); }catch(e){}
+    if(done) return;
+    setTimeout(function(){
+      if(cryptoKey && !tourActive) startTour();
+    }, 500);
+  }
+
+  if(tourNextBtn){
+    tourNextBtn.addEventListener("click", function(){
+      if(tourIdx >= TOUR_STEPS.length - 1){ endTour(); return; }
+      tourIdx++;
+      showTourStep();
+    });
+  }
+  if(tourSkipBtn){
+    tourSkipBtn.addEventListener("click", function(){ endTour(); });
+  }
+  if(tourRestartBtn){
+    tourRestartBtn.addEventListener("click", function(){
+      if(cryptoKey) startTour();
+    });
+  }
 
   // ---------- Boot: bepaal of setup of ontgrendelen nodig is ----------
   appEl.style.display = "none";

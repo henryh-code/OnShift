@@ -1802,3 +1802,85 @@
     0%{ transform: translateY(4px); opacity: 0; }
     100%{ transform: translateY(0); opacity: 1; }
   }
+
+  /* ===========================================================
+     Onboarding-rondleiding (spotlight + popover)
+     =========================================================== */
+  .tour{ position: fixed; inset: 0; z-index: 10050; }
+  .tour[hidden]{ display: none !important; }
+
+  /* Transparante laag die klikken op de app blokkeert tijdens de tour.
+     De verduistering zelf komt van de box-shadow van .tour-spot. */
+  .tour-backdrop{ position: absolute; inset: 0; background: transparent; }
+
+  .tour-spot{
+    position: absolute;
+    top: 0; left: 0; width: 0; height: 0;
+    border-radius: 16px;
+    box-shadow:
+      0 0 0 9999px rgba(10, 11, 13, 0.74),
+      0 0 0 2px var(--accent),
+      0 0 24px 6px rgba(111, 166, 147, 0.32);
+    pointer-events: none;
+    transition: top .24s ease, left .24s ease, width .24s ease, height .24s ease;
+  }
+
+  .tour-card{
+    position: absolute;
+    top: 0; left: 0;
+    width: min(340px, calc(100vw - 24px));
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
+    padding: 18px 18px 14px;
+    pointer-events: auto;
+  }
+
+  .tour-step{
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+    margin-bottom: 8px;
+  }
+  .tour-title{ margin: 0 0 6px; font-size: 1.04rem; font-weight: 700; color: var(--title); letter-spacing: -0.01em; }
+  .tour-text{ margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: var(--text-soft); }
+
+  .tour-actions{ display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .tour-skip{
+    background: none; border: none; padding: 8px 2px;
+    font-family: inherit; font-size: 12.5px; color: var(--meta);
+    cursor: pointer; min-height: var(--tap-min);
+  }
+  .tour-skip:hover{ color: var(--text-soft); }
+  .tour-next{
+    background: var(--brand-gradient); color: var(--on-accent);
+    font-family: inherit; font-size: 13px; font-weight: 650;
+    border: none; border-radius: var(--radius-pill);
+    padding: 10px 20px; min-height: var(--tap-min); cursor: pointer;
+    transition: filter .15s ease;
+  }
+  .tour-next:hover{ filter: brightness(1.07); }
+
+  /* Mobiel / smalle viewport: kaart als onderste sheet, altijd gecentreerd. */
+  .tour-card.is-sheet{
+    position: fixed;
+    left: 12px; right: 12px; bottom: 12px;
+    top: auto;
+    width: auto;
+  }
+
+  @media (max-width: 1023px){
+    .tour-card{
+      position: fixed;
+      left: 12px; right: 12px; bottom: 12px;
+      top: auto;
+      width: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .tour-spot{ transition: none; }
+  }

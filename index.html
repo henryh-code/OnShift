@@ -572,6 +572,20 @@
       </div>
     </section>
 
+    <!-- Rondleiding -->
+    <section class="card">
+      <div class="card-head" data-panel="beheerTour" role="button" tabindex="0" aria-expanded="true">
+        <div class="card-title"><span class="dot"></span>Rondleiding</div>
+        <span class="card-chevron">▾</span>
+      </div>
+      <div class="card-body" id="panelBody-beheerTour">
+        <div class="card-sub">Bekijk de interactieve uitleg van alle OnShift-functies opnieuw.</div>
+        <div class="add-row" style="border-top:none; padding-top:0; margin-top:0;">
+          <button id="tourRestartBtn" type="button" class="secondary">Rondleiding opnieuw bekijken</button>
+        </div>
+      </div>
+    </section>
+
     <footer class="hint">Wijzigingen hier gelden meteen ook op het Dashboard.</footer>
   </div>
 
@@ -611,6 +625,21 @@
       <input type="password" inputmode="numeric" id="unlockPin" class="lock-input" placeholder="Pincode" autocomplete="off">
       <button type="button" id="unlockBtn" class="lock-btn">Ontgrendelen</button>
       <div class="lock-error" id="unlockError">&nbsp;</div>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding-rondleiding -->
+<div class="tour" id="tourRoot" hidden>
+  <div class="tour-backdrop" id="tourBackdrop"></div>
+  <div class="tour-spot" id="tourSpot" aria-hidden="true"></div>
+  <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle" aria-describedby="tourText">
+    <div class="tour-step" id="tourStep">Stap 1 van 6</div>
+    <h3 class="tour-title" id="tourTitle"></h3>
+    <p class="tour-text" id="tourText"></p>
+    <div class="tour-actions">
+      <button type="button" class="tour-skip" id="tourSkip">Overslaan</button>
+      <button type="button" class="tour-next" id="tourNext">Volgende</button>
     </div>
   </div>
 </div>
