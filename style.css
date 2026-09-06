@@ -340,7 +340,13 @@
     width: 100%;
     max-width: 664px;                 /* mode 1: één kolom */
     margin-inline: auto;
-    padding: 22px 22px 52px;
+    /* Veilige zones meerekenen: notch / punch-hole / statusbalk (top),
+       gebogen schermranden (left/right), home-indicator (bottom). */
+    padding:
+      calc(22px + env(safe-area-inset-top))
+      calc(22px + env(safe-area-inset-right))
+      calc(52px + env(safe-area-inset-bottom))
+      calc(22px + env(safe-area-inset-left));
   }
 
   .topbar{
@@ -1601,7 +1607,12 @@
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding:
+      max(20px, env(safe-area-inset-top))
+      max(20px, env(safe-area-inset-right))
+      max(20px, env(safe-area-inset-bottom))
+      max(20px, env(safe-area-inset-left));
+    overflow-y: auto;
   }
   .lock-overlay.open{ display: flex; }
 
@@ -1685,13 +1696,23 @@
       max-width: 82vw;
       box-shadow: var(--shadow-pop);
       transition: none;
+      /* Drawer-inhoud (schakelaar-logo, navigatie) onder de statusbalk uit. */
+      padding-top: calc(20px + env(safe-area-inset-top));
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
+      padding-left: calc(14px + env(safe-area-inset-left));
     }
     .app.nav-open .sidebar{ left: 0; }
 
     .nav-backdrop{ display: block; pointer-events: none; transition: none; }
     .app.nav-open .nav-backdrop{ opacity: 1; pointer-events: auto; }
 
-    .main{ padding: 18px 20px 44px; }
+    .main{
+      padding:
+        calc(18px + env(safe-area-inset-top))
+        calc(20px + env(safe-area-inset-right))
+        calc(44px + env(safe-area-inset-bottom))
+        calc(20px + env(safe-area-inset-left));
+    }
   }
 
   @media (max-width: 1023px) and (prefers-reduced-motion: no-preference){
@@ -1700,7 +1721,13 @@
   }
 
   @media (max-width: 767px){
-    .main{ padding: 16px 14px 40px; }
+    .main{
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        calc(14px + env(safe-area-inset-right))
+        calc(40px + env(safe-area-inset-bottom))
+        calc(14px + env(safe-area-inset-left));
+    }
     .topbar{ margin-bottom: 18px; }
     .card{ padding: 18px 16px; border-radius: 18px; }
     .card-title{ font-size: 1.02rem; }
@@ -1720,7 +1747,13 @@
   }
 
   @media (max-width: 380px){
-    .main{ padding: 13px 11px 32px; }
+    .main{
+      padding:
+        calc(13px + env(safe-area-inset-top))
+        calc(11px + env(safe-area-inset-right))
+        calc(32px + env(safe-area-inset-bottom))
+        calc(11px + env(safe-area-inset-left));
+    }
     .cal-month-label{ min-width: 100px; font-size: 12.5px; }
   }
   
@@ -1867,7 +1900,9 @@
   /* Mobiel / smalle viewport: kaart als onderste sheet, altijd gecentreerd. */
   .tour-card.is-sheet{
     position: fixed;
-    left: 12px; right: 12px; bottom: 12px;
+    left: calc(12px + env(safe-area-inset-left));
+    right: calc(12px + env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
     top: auto;
     width: auto;
   }
@@ -1875,7 +1910,9 @@
   @media (max-width: 1023px){
     .tour-card{
       position: fixed;
-      left: 12px; right: 12px; bottom: 12px;
+      left: calc(12px + env(safe-area-inset-left));
+      right: calc(12px + env(safe-area-inset-right));
+      bottom: calc(12px + env(safe-area-inset-bottom));
       top: auto;
       width: auto;
     }
